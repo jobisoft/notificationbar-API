@@ -25,8 +25,14 @@
     ]
   },
   "content_security_policy": "default-src 'self'; script-src 'self' 'unsafe-eval'",
-  "compose_action": {
-    "default_popup": "alert.html",
-    "default_title": "Template"
+  "experiment_apis": {
+    "notification": {
+      "schema": "notification/schema.json",
+      "parent": {
+        "scopes": ["addon_parent"],
+        "paths": [["notification"]],
+        "script": "notification/implementation.js"
+      }
+    }
   }
 }

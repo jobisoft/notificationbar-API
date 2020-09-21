@@ -6,8 +6,7 @@ CONTENTS = FileList[
   'manifest.json',
   'background.js',
   'handlebars.js',
-  'alert.html',
-  'alert.js',
+  'notification/*',
 ]
 
 VERSION = JSON.load(File.read 'manifest.json')['version']
