@@ -33,6 +33,15 @@
         "paths": [["notification"]],
         "script": "notification/implementation.js"
       }
+    },
+
+    "notificationbox": {
+      "schema": "notificationbox/schema.json",
+      "parent": {
+        "scopes": ["addon_parent"],
+        "paths": [["notificationbox"]],
+        "script": "notificationbox/implementation.js"
+      }
     }
   }
 }

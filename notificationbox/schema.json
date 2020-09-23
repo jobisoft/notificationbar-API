@@ -1,0 +1,184 @@
+[
+  {
+    "namespace": "notificationbox",
+    //"permissions": ["notificationbox"],
+    "types": [
+      {
+        "id": "Priority",
+        "type": "integer",
+        "enum": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        "description": "Priority of the notification"
+      },
+      {
+        "id": "NotificationOptions",
+        "type": "object",
+        "properties": {
+          "label": {
+            "description": "Notification content",
+            "type": "string"
+          },
+          "image": {
+            "optional": true,
+            "description": "URL of image to appear on the notification. Default is an appropriate icon for the priority level is used.",
+            "type": "string"
+          },
+          "priority": {
+            "optional": true,
+            "description": "Priority ranges from INFO_LOW to CRITICAL_HIGH. INFO_MEDIUM is default.",
+            "$ref": "Priority"
+          },
+          "buttons": {
+            //"unsupported": true,
+            "optional": true,
+            "description": "Text and icons for up to two notification action buttons.",
+            "type": "array",
+            "items": { "$ref": "Button" }
+          }
+        }
+      },
+      {
+        "id": "Button",
+        "description": "Notification button",
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "desciption": "The label to appear on the button"
+          },
+          "accesskey": {
+            "type": "string",
+            "desciption": "The accesskey attribute set on the button",
+            "optional": true
+          }
+        }
+      }
+    ],
+    "properties": {
+      "PRIORITY_INFO_LOW": { "value": 1 },
+      "PRIORITY_INFO_MEDIUM": { "value": 2 },
+      "PRIORITY_INFO_HIGH": { "value": 3 },
+      "PRIORITY_WARNING_LOW": { "value": 4 },
+      "PRIORITY_WARNING_MEDIUM": { "value": 5 },
+      "PRIORITY_WARNING_HIGH": { "value": 6 },
+      "PRIORITY_CRITICAL_LOW": { "value": 7 },
+      "PRIORITY_CRITICAL_MEDIUM": { "value": 8 },
+      "PRIORITY_CRITICAL_HIGH": { "value": 9 }
+    },
+    "functions": [
+      {
+        "name": "create",
+        "description": "Create a notification",
+        "type": "function",
+        "asyn": true,
+        "parameters": [
+          {
+            "name": "notificationId",
+            "description": "Identifier of the notification. If it is empty, this method generates an id. If it matches an existing notification, this method first clears that notification before proceeding with the create operation.",
+            "optional": true,
+            "type": "string"
+          },
+          {
+            "name": "options",
+            "$ref": "NotificationOptions",
+            "description": "Contents of the notification"
+          }
+        ]
+      },
+      {
+        "name": "update",
+        "unsupported": true,
+        "type": "function",
+        "description": "Updates an existing notification.",
+        "async": "callback",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "notificationId",
+            "description": "The id of the notification to be updated."
+          },
+          {
+            "$ref": "NotificationOptions",
+            "name": "options",
+            "description": "Contents of the notification to update to."
+          },
+          {
+            "optional": true,
+            "type": "function",
+            "name": "callback",
+            "parameters": [
+              {
+                "name": "wasUpdated",
+                "type": "boolean",
+                "description": "Indicates whether a matching notification existed."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "clear",
+        "type": "function",
+        "description": "Clears an existing notification.",
+        "async": "callback",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "notificationId",
+            "description": "The id of the notification to be updated."
+          },
+          {
+            "optional": true,
+            "type": "function",
+            "name": "callback",
+            "parameters": [
+              {
+                "name": "wasCleared",
+                "type": "boolean",
+                "description": "Indicates whether a matching notification existed."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "getAll",
+        "type": "function",
+        "description": "Retrieves all the notifications.",
+        "async": "callback",
+        "parameters": [
+          {
+            "type": "function",
+            "name": "callback",
+            "parameters": [
+              {
+                "name": "notifications",
+                "type": "object",
+                "additionalProperties": {"$ref": "NotificationOptions"},
+                "description": "The set of notifications currently in the system."
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "events" : [
+      {
+        "name": "onButtonClicked",
+        "type": "function",
+        "description": "Fired when the  user pressed a button in the notification.",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "notificationId",
+            "description": "The notificationId of the clicked notification."
+          },
+          {
+            "type": "string",
+            "name": "label",
+            "description": "The label of the button clicked by the user."
+          }
+        ]
+      }
+    ]
+  }
+]

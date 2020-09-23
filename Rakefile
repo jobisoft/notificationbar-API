@@ -7,6 +7,7 @@ CONTENTS = FileList[
   'background.js',
   'handlebars.js',
   'notification/*',
+  'notificationbox/*',
 ]
 
 VERSION = JSON.load(File.read 'manifest.json')['version']
