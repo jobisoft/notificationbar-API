@@ -69,7 +69,7 @@
         "name": "create",
         "description": "Create a notification",
         "type": "function",
-        "asyn": true,
+        "async": true,
         "parameters": [
           {
             "name": "notificationId",
