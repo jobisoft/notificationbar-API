@@ -165,7 +165,7 @@
       {
         "name": "onButtonClicked",
         "type": "function",
-        "description": "Fired when the  user pressed a button in the notification.",
+        "description": "Fired when the user pressed a button in the notification.",
         "parameters": [
           {
             "type": "string",
@@ -176,6 +176,18 @@
             "type": "string",
             "name": "label",
             "description": "The label of the button clicked by the user."
+          }
+        ]
+      },
+      {
+        "name": "onClosed",
+        "type": "function",
+        "description": "Fired when the user closes a notification.",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "notificationId",
+            "description": "The notificationId of the closed notification."
           }
         ]
       }

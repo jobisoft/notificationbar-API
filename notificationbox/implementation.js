@@ -1,19 +1,17 @@
 "use strict";
 
-const ToolkitModules = {};
+const { EventEmitter, EventManager, ExtensionAPI } = ExtensionCommon;
 
-ChromeUtils.defineModuleGetter(
-  ToolkitModules,
-  "EventEmitter",
-  "resource://gre/modules/EventEmitter.jsm"
-);
+XPCOMUtils.defineLazyServiceGetters(this, {
+  UUIDGen: ["@mozilla.org/uuid-generator;1", "nsIUUIDGenerator"],
+});
 
-var { ExtensionCommon } = ChromeUtils.import("resource://gre/modules/ExtensionCommon.jsm");
-//const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+function uuid() {
+  return UUIDGen.generateUUID().toString();
+}
 
 function notificationBox() {
   let w = Services.wm.getMostRecentWindow(null);
-  let notifyBox;
   if (w.gMessageNotificationBar) {
     return w.gMessageNotificationBar.msgNotificationBar;
   }
@@ -39,70 +37,67 @@ class Notification {
       imageURL = context.extension.baseURI.resolve(options.image);
     }
 
-    // Set before calling into nsIAlertsService, because the notification may be
+    // Set before calling into notificationbox, because the notification may be
     // closed during the call.
     notificationsMap.set(id, this);
-
-    let eventCallback = function() { console.log("notification box event callback fired"); };
-    let notificationId = this.id;
-    let buttons = options.buttons.map((button) => {
+    var self = this;
+    let buttons = options.buttons.map(function(button) {
       return {
         label: button.label,
         accesskey: button.accesskey,
-        callback: () => {
-          let results = notificationsMap.emit("buttonclicked", id, button.label);
-          for (let result of results) {
-            if (result !== true) {
-              return false;
+        callback: function(/*notificationBox, buttonDescription, eventTarget*/) {
+          // Fire the event and sort out if we need to close the notification
+          // later.
+          self.notificationsMap.emitter.emit("buttonclicked", self.id, button.label).then((values) => {
+            let allTrue = values.every((value) => value === true);
+            if (!allTrue) {
+              self.clear();
             }
-          }
+          });
+
+          // Keep the notification box open until we hear from the event
+          // handlers.
           return true;
         }
       }
     });
 
+    let callback = function(event) {
+      if (event === "removed") {
+        self.notificationsMap.emitter.emit("closed", self.id)
+      }
+      else {
+        console.log(`Notification event (${self.id}: ${event}`);
+      }
+    };
+
     try {
-      // FIXME: display the notification
-      notificationBox().appendNotification(options.label, this.id, imageURL, this.options.priority, buttons, eventCallback);
+      notificationBox().appendNotification(options.label, this.id, imageURL, this.options.priority, buttons, callback);
     } catch (e) {
       // This will fail if notificationbox is not available.
-
-      this.observe(null, "notificationfinished", id);
     }
   }
 
   clear() {
     try {
-      // FIXME: close this notification
+      notificationBox().removeNotification(
+        notificationBox().getNotificationWithValue(this.id)
+      );
     } catch (e) {
       // FIXME handle the error
     }
     this.notificationsMap.delete(this.id);
   }
-
-  observe(subject, topic, data) {
-    switch (topic) {
-      case "notificationclickcallback":
-        this.notificationsMap.emit("clicked", data);
-        break;
-      case "notificationfinished":
-        this.notificationsMap.emit("closed", data);
-        this.notificationsMap.delete(this.id);
-        break;
-      case "notificationshow":
-        this.notificationsMap.emit("shown", data);
-        break;
-    }
-  }
 }
 
-var notificationbox = class extends ExtensionCommon.ExtensionAPI {
+var notificationbox = class extends ExtensionAPI {
   constructor(extension) {
     super(extension);
 
-    this.nextId = 0;
+    this.idCounter = 0;
     this.notificationsMap = new Map();
-    ToolkitModules.EventEmitter.decorate(this.notificationsMap);
+    this.emitter = new EventEmitter();
+    this.notificationsMap.emitter = this.emitter;
   }
 
   onShutdown() {
@@ -113,12 +108,17 @@ var notificationbox = class extends ExtensionCommon.ExtensionAPI {
 
   getAPI(context) {
     let notificationsMap = this.notificationsMap;
+    let emitter = this.emitter;
 
     return {
       notificationbox: {
         create(notificationId, options) {
           if (!notificationId) {
-            notificationId = String(this.nextId++);
+            let newId = `notification-${uuid()}`;
+            while (notificationsMap.has(newId)) {
+              newId = `notification-${uuid()}`;
+            }
+            notificationId = newId;
           }
 
           if (notificationsMap.has(notificationId)) {
@@ -133,9 +133,9 @@ var notificationbox = class extends ExtensionCommon.ExtensionAPI {
         clear: function(notificationId) {
           if (notificationsMap.has(notificationId)) {
             notificationsMap.get(notificationId).clear();
-            return Promise.resolve(true);
+            return true;
           }
-          return Promise.resolve(false);
+          return false;
         },
 
         getAll: function() {
@@ -143,10 +143,10 @@ var notificationbox = class extends ExtensionCommon.ExtensionAPI {
           notificationsMap.forEach((value, key) => {
             result[key] = value.options;
           });
-          return Promise.resolve(result);
+          return result;
         },
 
-        onClosed: new ExtensionCommon.EventManager({
+        onClosed: new EventManager({
           context,
           name: "notificationbox.onClosed",
           register: fire => {
@@ -155,24 +155,24 @@ var notificationbox = class extends ExtensionCommon.ExtensionAPI {
               fire.async(notificationId, true);
             };
 
-            notificationsMap.on("closed", listener);
+            emitter.on("closed", listener);
             return () => {
-              notificationsMap.off("closed", listener);
+              emitter.off("closed", listener);
             };
           },
         }).api(),
 
-        onButtonClicked: new ExtensionCommon.EventManager({
+        onButtonClicked: new EventManager({
           context,
           name: "notificationbox.onButtonClicked",
           register: fire => {
             let listener = (event, notificationId, label) => {
-              return fire.sync(notificationId, label);
+              return fire.async(notificationId, label);
             };
 
-            notificationsMap.on("buttonclicked", listener);
+            emitter.on("buttonclicked", listener);
             return () => {
-              notificationsMap.off("buttonclicked", listener);
+              emitter.off("buttonclicked", listener);
             };
           },
         }).api(),
