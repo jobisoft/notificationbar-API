@@ -72,6 +72,11 @@
         "async": true,
         "parameters": [
           {
+            "name": "windowId",
+            "description": "Identifier of the window, where the notificationbox should be added to.",
+            "type": "integer"
+          },
+          {
             "name": "notificationId",
             "description": "Identifier of the notification. If it is empty, this method generates an id. If it matches an existing notification, this method first clears that notification before proceeding with the create operation.",
             "optional": true,

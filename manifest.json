@@ -1,18 +1,16 @@
 {
   "manifest_version": 2,
-  "name": "Templates",
+  "name": "Notificationbox API",
   "version": "0.1",
-
-  "description": "Message templates",
-
-  "icon": {
-    "48": "images/icon-48.png"
+  "description": "Sample usage of Notificationbox API",
+  "icons": {
+    "48": "icon.png"
   },
 
   "applications": {
     "gecko": {
-      "id": "templates@thunderbird.pointless.one",
-      "strict_min_version": "74.0b2"
+      "id": "Notificationbox@thunderbird.api.development",
+      "strict_min_version": "78.0"
     }
   },
   "permissions": [
@@ -20,21 +18,10 @@
   ],
   "background": {
     "scripts": [
-      "handlebars.js",
       "background.js"
     ]
   },
-  "content_security_policy": "default-src 'self'; script-src 'self' 'unsafe-eval'",
   "experiment_apis": {
-    "notification": {
-      "schema": "notification/schema.json",
-      "parent": {
-        "scopes": ["addon_parent"],
-        "paths": [["notification"]],
-        "script": "notification/implementation.js"
-      }
-    },
-
     "notificationbox": {
       "schema": "notificationbox/schema.json",
       "parent": {
