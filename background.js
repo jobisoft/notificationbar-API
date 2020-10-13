@@ -18,12 +18,12 @@ browser.compose.onBeforeSend.addListener(async (tab, details) => {
     priority: 2,
     buttons: [
       {
-        name: "btn3",
+        id: "btn3",
         label: "Okey-dokey",
         accesskey: "o",
       },
       {
-        name: "btn4",
+        id: "btn4",
         label: "Stay!"
       }
     ]
@@ -34,12 +34,12 @@ browser.compose.onBeforeSend.addListener(async (tab, details) => {
     priority: 8,
     buttons: [
       {
-        name: "btn1",
+        id: "btn1",
         label: "Okey-dokey",
         accesskey: "o",
       },
       {
-        name: "btn2",
+        id: "btn2",
         label: "Stay!"
       }
     ]

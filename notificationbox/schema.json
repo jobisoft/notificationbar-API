@@ -40,9 +40,9 @@
         "description": "Notification button",
         "type": "object",
         "properties": {
-          "name": {
+          "id": {
             "type": "string",
-            "desciption": "The name of the button, used in onButtonClicked events."
+            "desciption": "The unique id of the button. Is send in onButtonClicked events."
           },
           "label": {
             "type": "string",
