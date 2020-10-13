@@ -124,15 +124,15 @@
         ]
       },
       {
-        "name": "clear",
+        "name": "remove",
         "type": "function",
-        "description": "Clears an existing notification.",
+        "description": "Removes an existing notification.",
         "async": "callback",
         "parameters": [
           {
             "type": "string",
             "name": "notificationId",
-            "description": "The id of the notification to be updated."
+            "description": "The id of the notification to be removed."
           },
           {
             "optional": true,
@@ -188,9 +188,21 @@
         ]
       },
       {
+        "name": "onDismissed",
+        "type": "function",
+        "description": "Fired when a notification has been dismissed by the user.",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "notificationId",
+            "description": "The notificationId of the dismissed notification."
+          }
+        ]
+      },
+      {
         "name": "onClosed",
         "type": "function",
-        "description": "Fired when the user closes a notification.",
+        "description": "Fired when a notification has been closed (button, dismiss, or manually calling remove()).",
         "parameters": [
           {
             "type": "string",
@@ -198,7 +210,7 @@
             "description": "The notificationId of the closed notification."
           }
         ]
-      }
+      }      
     ]
   }
 ]

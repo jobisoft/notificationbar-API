@@ -33,7 +33,7 @@ class Notification {
           self.parent.emitter.emit("buttonclicked", self.notificationId, button.id).then((values) => {
             let allTrue = values.every((value) => value === true);
             if (!allTrue) {
-              self.clear();
+              self.remove();
             }
           });
 
@@ -46,8 +46,13 @@ class Notification {
 
     let callback = function(event) {
       console.log(`Notification event (${self.notificationId}: ${event}`);
+      // Every dismissed notification will also generate a removed notification
+      if (event === "dismissed") {
+        self.parent.emitter.emit("dismissed", self.notificationId);
+      }
       if (event === "removed") {
-        self.parent.emitter.emit("closed", self.notificationId, /* closed by user */ true);
+        self.parent.emitter.emit("removed", self.notificationId, /* closed by user */ true);
+        self.cleanup();
       }
     };
 
@@ -70,10 +75,13 @@ class Notification {
     }
   }
   
-  clear() {
+  remove() {
       let notificationBox = this.getNotificationBox();
       let notification = notificationBox.getNotificationWithValue(this.notificationId);
       notificationBox.removeNotification(notification);
+  }
+
+  cleanup() {
       this.parent.notificationsMap.delete(this.notificationId);    
   }
 }
@@ -87,7 +95,7 @@ var notificationbox = class extends ExtensionAPI {
 
   onShutdown() {
     for (let notification of this.notificationsMap.values()) {
-      notification.clear();
+      notification.remove();
     }
   }
 
@@ -105,16 +113,16 @@ var notificationbox = class extends ExtensionAPI {
           }
 
           if (self.notificationsMap.has(notificationId)) {
-            self.notificationsMap.get(notificationId).clear();
+            self.notificationsMap.get(notificationId).remove();
           }
 
           self.notificationsMap.set(notificationId, new Notification(windowId, notificationId, options, self));
           return notificationId;
         },
 
-        clear: function(notificationId) {
+        remove: function(notificationId) {
           if (self.notificationsMap.has(notificationId)) {
-            self.notificationsMap.get(notificationId).clear();
+            self.notificationsMap.get(notificationId).remove();
             return true;
           }
           return false;
@@ -128,6 +136,21 @@ var notificationbox = class extends ExtensionAPI {
           return result;
         },
 
+        onDismissed: new EventManager({
+          context,
+          name: "notificationbox.onDismissed",
+          register: fire => {
+            let listener = (event, notificationId) => {
+              fire.async(notificationId);
+            };
+
+            self.emitter.on("dismissed", listener);
+            return () => {
+              self.emitter.off("dismissed", listener);
+            };
+          },
+        }).api(),
+
         onClosed: new EventManager({
           context,
           name: "notificationbox.onClosed",
@@ -136,9 +159,9 @@ var notificationbox = class extends ExtensionAPI {
               fire.async(notificationId, closedByUser);
             };
 
-            self.emitter.on("closed", listener);
+            self.emitter.on("removed", listener);
             return () => {
-              self.emitter.off("closed", listener);
+              self.emitter.off("removed", listener);
             };
           },
         }).api(),
