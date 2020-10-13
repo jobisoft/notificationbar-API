@@ -24,7 +24,8 @@
           },
           "priority": {
             "optional": true,
-            "description": "Priority ranges from INFO_LOW to CRITICAL_HIGH. INFO_MEDIUM is default.",
+            "default": 1,
+            "description": "Priority ranges from 1 to 9. Default is 1.",
             "$ref": "Priority"
           },
           "buttons": {
@@ -42,7 +43,7 @@
         "properties": {
           "id": {
             "type": "string",
-            "desciption": "The unique id of the button. Is send in onButtonClicked events."
+            "desciption": "The id of the button. Is send in onButtonClicked events."
           },
           "label": {
             "type": "string",
@@ -56,17 +57,6 @@
         }
       }
     ],
-    "properties": {
-      "PRIORITY_INFO_LOW": { "value": 1 },
-      "PRIORITY_INFO_MEDIUM": { "value": 2 },
-      "PRIORITY_INFO_HIGH": { "value": 3 },
-      "PRIORITY_WARNING_LOW": { "value": 4 },
-      "PRIORITY_WARNING_MEDIUM": { "value": 5 },
-      "PRIORITY_WARNING_HIGH": { "value": 6 },
-      "PRIORITY_CRITICAL_LOW": { "value": 7 },
-      "PRIORITY_CRITICAL_MEDIUM": { "value": 8 },
-      "PRIORITY_CRITICAL_HIGH": { "value": 9 }
-    },
     "functions": [
       {
         "name": "create",
@@ -94,10 +84,9 @@
       },
       {
         "name": "update",
-        "unsupported": true,
         "type": "function",
         "description": "Updates an existing notification.",
-        "async": "callback",
+        "async": true,
         "parameters": [
           {
             "type": "string",
@@ -108,43 +97,19 @@
             "$ref": "NotificationOptions",
             "name": "options",
             "description": "Contents of the notification to update to."
-          },
-          {
-            "optional": true,
-            "type": "function",
-            "name": "callback",
-            "parameters": [
-              {
-                "name": "wasUpdated",
-                "type": "boolean",
-                "description": "Indicates whether a matching notification existed."
-              }
-            ]
           }
         ]
       },
       {
-        "name": "remove",
+        "name": "clear",
         "type": "function",
         "description": "Removes an existing notification.",
-        "async": "callback",
+        "async": true,
         "parameters": [
           {
             "type": "string",
             "name": "notificationId",
             "description": "The id of the notification to be removed."
-          },
-          {
-            "optional": true,
-            "type": "function",
-            "name": "callback",
-            "parameters": [
-              {
-                "name": "wasCleared",
-                "type": "boolean",
-                "description": "Indicates whether a matching notification existed."
-              }
-            ]
           }
         ]
       },
@@ -152,20 +117,8 @@
         "name": "getAll",
         "type": "function",
         "description": "Retrieves all the notifications.",
-        "async": "callback",
+        "async": true,
         "parameters": [
-          {
-            "type": "function",
-            "name": "callback",
-            "parameters": [
-              {
-                "name": "notifications",
-                "type": "object",
-                "additionalProperties": {"$ref": "NotificationOptions"},
-                "description": "The set of notifications currently in the system."
-              }
-            ]
-          }
         ]
       }
     ],
@@ -208,6 +161,11 @@
             "type": "string",
             "name": "notificationId",
             "description": "The notificationId of the closed notification."
+          },
+          {
+            "type": "boolean",
+            "name": "byUser",
+            "description": "The notification was closed by the user."
           }
         ]
       }      

@@ -13,6 +13,7 @@ function uuid() {
 
 class Notification {
   constructor(windowId, notificationId, options, parent) {
+    this.closedByUser = true;
     this.windowId = windowId;
     this.notificationId = notificationId;
     this.options = options;
@@ -33,7 +34,7 @@ class Notification {
           self.parent.emitter.emit("buttonclicked", self.notificationId, button.id).then((values) => {
             let allTrue = values.every((value) => value === true);
             if (!allTrue) {
-              self.remove();
+              self.remove(/* closedByUser */ true);
             }
           });
 
@@ -45,13 +46,13 @@ class Notification {
     });
 
     let callback = function(event) {
-      console.log(`Notification event (${self.notificationId}: ${event}`);
+      console.log(`Notification event ${self.notificationId}: ${event}`);
       // Every dismissed notification will also generate a removed notification
       if (event === "dismissed") {
         self.parent.emitter.emit("dismissed", self.notificationId);
       }
       if (event === "removed") {
-        self.parent.emitter.emit("removed", self.notificationId, /* closed by user */ true);
+        self.parent.emitter.emit("closed", self.notificationId, self.closedByUser);
         self.cleanup();
       }
     };
@@ -75,7 +76,11 @@ class Notification {
     }
   }
   
-  remove() {
+  remove(closedByUser) {
+      // The remove() method is called by button clicks and by notificationBox.clear()
+      // but not by dismissal. In that case, the default value defined in the constructor
+      //  defines the value of closedByUser which is used by the event emitter.
+      this.closedByUser = closedByUser;
       let notificationBox = this.getNotificationBox();
       let notification = notificationBox.getNotificationWithValue(this.notificationId);
       notificationBox.removeNotification(notification);
@@ -95,7 +100,7 @@ var notificationbox = class extends ExtensionAPI {
 
   onShutdown() {
     for (let notification of this.notificationsMap.values()) {
-      notification.remove();
+      notification.remove(/* closedByUser */ false);
     }
   }
 
@@ -113,22 +118,29 @@ var notificationbox = class extends ExtensionAPI {
           }
 
           if (self.notificationsMap.has(notificationId)) {
-            self.notificationsMap.get(notificationId).remove();
+            self.notificationsMap.get(notificationId).remove(/* closedByUser */ false);
           }
 
           self.notificationsMap.set(notificationId, new Notification(windowId, notificationId, options, self));
           return notificationId;
         },
 
-        remove: function(notificationId) {
+        async update(notificationId) {
           if (self.notificationsMap.has(notificationId)) {
-            self.notificationsMap.get(notificationId).remove();
+            return true;
+          }
+          return false;
+        },
+        
+        async clear(notificationId) {
+          if (self.notificationsMap.has(notificationId)) {
+            self.notificationsMap.get(notificationId).remove(/* closedByUser */ false);
             return true;
           }
           return false;
         },
 
-        getAll: function() {
+        async getAll() {
           let result = {};
           self.notificationsMap.forEach((value, key) => {
             result[key] = value.options;
@@ -159,9 +171,9 @@ var notificationbox = class extends ExtensionAPI {
               fire.async(notificationId, closedByUser);
             };
 
-            self.emitter.on("removed", listener);
+            self.emitter.on("closed", listener);
             return () => {
-              self.emitter.off("removed", listener);
+              self.emitter.off("closed", listener);
             };
           },
         }).api(),
