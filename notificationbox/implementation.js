@@ -124,13 +124,6 @@ var notificationbox = class extends ExtensionAPI {
           self.notificationsMap.set(notificationId, new Notification(windowId, notificationId, options, self));
           return notificationId;
         },
-
-        async update(notificationId) {
-          if (self.notificationsMap.has(notificationId)) {
-            return true;
-          }
-          return false;
-        },
         
         async clear(notificationId) {
           if (self.notificationsMap.has(notificationId)) {

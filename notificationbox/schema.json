@@ -83,24 +83,6 @@
         ]
       },
       {
-        "name": "update",
-        "type": "function",
-        "description": "Updates an existing notification.",
-        "async": true,
-        "parameters": [
-          {
-            "type": "string",
-            "name": "notificationId",
-            "description": "The id of the notification to be updated."
-          },
-          {
-            "$ref": "NotificationOptions",
-            "name": "options",
-            "description": "Contents of the notification to update to."
-          }
-        ]
-      },
-      {
         "name": "clear",
         "type": "function",
         "description": "Removes an existing notification.",

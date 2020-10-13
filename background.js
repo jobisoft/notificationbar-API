@@ -42,7 +42,6 @@ browser.compose.onBeforeSend.addListener(async (tab, details) => {
       }
     ]
   });
-
   
   let data = await browser.notificationbox.getAll();
   console.log(data);
