@@ -24,12 +24,13 @@ class Notification {
     let self = this;
     let buttons = options.buttons.map(function(button) {
       return {
+        name: button.name,
         label: button.label,
         accesskey: button.accesskey,
         callback: function() {
           // Fire the event and keep the notification open, decided to close it
           // based on the return values later.
-          self.parent.emitter.emit("buttonclicked", self.notificationId, button.label).then((values) => {
+          self.parent.emitter.emit("buttonclicked", self.notificationId, button.name).then((values) => {
             let allTrue = values.every((value) => value === true);
             if (!allTrue) {
               self.clear();
@@ -146,8 +147,8 @@ var notificationbox = class extends ExtensionAPI {
           context,
           name: "notificationbox.onButtonClicked",
           register: fire => {
-            let listener = (event, notificationId, label) => {
-              return fire.async(notificationId, label);
+            let listener = (event, notificationId, buttonId) => {
+              return fire.async(notificationId, buttonId);
             };
 
             self.emitter.on("buttonclicked", listener);

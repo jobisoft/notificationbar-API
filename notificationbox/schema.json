@@ -28,7 +28,6 @@
             "$ref": "Priority"
           },
           "buttons": {
-            //"unsupported": true,
             "optional": true,
             "description": "Text and icons for up to two notification action buttons.",
             "type": "array",
@@ -41,6 +40,10 @@
         "description": "Notification button",
         "type": "object",
         "properties": {
+          "name": {
+            "type": "string",
+            "desciption": "The name of the button, used in onButtonClicked events."
+          },
           "label": {
             "type": "string",
             "desciption": "The label to appear on the button"
@@ -179,8 +182,8 @@
           },
           {
             "type": "string",
-            "name": "label",
-            "description": "The label of the button clicked by the user."
+            "name": "name",
+            "description": "The name of the button clicked by the user."
           }
         ]
       },
