@@ -147,8 +147,8 @@ var notificationbox = class extends ExtensionAPI {
           context,
           name: "notificationbox.onButtonClicked",
           register: fire => {
-            let listener = (event, notificationId, buttonId) => {
-              return fire.async(notificationId, buttonId);
+            let listener = (event, notificationId, buttonName) => {
+              return fire.async(notificationId, buttonName);
             };
 
             self.emitter.on("buttonclicked", listener);
