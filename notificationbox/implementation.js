@@ -64,18 +64,33 @@ class Notification {
 
   getNotificationBox() {
     let w = this.parent.extension.windowManager.get(this.windowId, this.parent.context).window;
-    if (w.gMessageNotificationBar) {
-      return w.gMessageNotificationBar.msgNotificationBar;
+    switch (this.options.placement) {
+    default:
+      if (w.gMessageNotificationBar) {
+        return w.gMessageNotificationBar.msgNotificationBar;
+      }
+    case "bottom":
+      if (w.specialTabs) {
+        return wspecialTabs.msgNotificationBar;
+      }
+      if (w.gNotification) {
+        return w.gNotification.notificationbox;
+      }
+    case "top":
+      if (w.gExtensionNotificationBox) {
+        return w.gExtensionNotificationBox;
+      }
+      let toolbox = w.document.querySelector("toolbox");
+      if (toolbox) {
+        w.gExtensionNotificationBox = new w.MozElements.NotificationBox(element => {
+          element.id = "extension-notification-box";
+          element.setAttribute("notificationside", "top");
+          toolbox.parentElement.insertBefore(element, toolbox.nextElementSibling);
+        });
+        return w.gExtensionNotificationBox;
+      }
     }
-    else if (w.specialTabs) {
-      return wspecialTabs.msgNotificationBar;
-    }
-    else if (w.gNotification) {
-      return w.gNotification.notificationbox;
-    }
-    else {
-      throw new ExtensionError("Can't find a notification bar");
-    }
+    throw new ExtensionError("Can't find a notification bar");
   }
   
   remove(closedByUser) {
