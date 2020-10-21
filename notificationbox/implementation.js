@@ -1,7 +1,8 @@
 "use strict";
 
-const { EventEmitter, EventManager, ExtensionAPI } = ExtensionCommon;
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var { EventEmitter, EventManager, ExtensionAPI } = ExtensionCommon;
+var { ExtensionError } = ExtensionUtils;
+var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyServiceGetters(this, {
   UUIDGen: ["@mozilla.org/uuid-generator;1", "nsIUUIDGenerator"],
@@ -18,7 +19,8 @@ class Notification {
     this.notificationId = notificationId;
     this.options = options;
     this.parent = parent;
-    this.imageURL = options.iconUrl
+
+    let imageURL = options.image
       ? parent.extension.baseURI.resolve(options.image)
       : null;
    
@@ -57,7 +59,7 @@ class Notification {
       }
     };
 
-    this.getNotificationBox().appendNotification(this.options.label, this.notificationId, this.imageURL, this.options.priority, buttons, callback);
+    this.getNotificationBox().appendNotification(options.label, notificationId, imageURL, options.priority, buttons, callback);
   }
 
   getNotificationBox() {
@@ -72,7 +74,7 @@ class Notification {
       return w.gNotification.notificationbox;
     }
     else {
-      throw new Error("Can't find a notification bar");
+      throw new ExtensionError("Can't find a notification bar");
     }
   }
   
