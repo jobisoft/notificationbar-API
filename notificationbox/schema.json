@@ -34,6 +34,13 @@
             "description": "Text and icons for up to two notification action buttons.",
             "type": "array",
             "items": { "$ref": "Button" }
+          },
+          "placement": {
+            "optional": true,
+            "default": "default",
+            "description": "The placement of the notification.",
+            "type": "string",
+            "enum": ["default", "top", "bottom"]
           }
         }
       },
