@@ -2,6 +2,35 @@
   {
     "namespace": "notificationbox",
     //"permissions": ["notificationbox"],
+    "properties": {
+      "PRIORITY_INFO_LOW": {
+        "value": 1
+      },
+      "PRIORITY_INFO_MEDIUM": {
+        "value": 2
+      },
+      "PRIORITY_INFO_HIGH": {
+        "value": 3
+      },
+      "PRIORITY_WARNING_LOW": {
+        "value": 4
+      },
+      "PRIORITY_WARNING_MEDIUM": {
+        "value": 5
+      },
+      "PRIORITY_WARNING_HIGH": {
+        "value": 6
+      },
+      "PRIORITY_CRITICAL_LOW": {
+        "value": 7
+      },
+      "PRIORITY_CRITICAL_MEDIUM": {
+        "value": 8
+      },
+      "PRIORITY_CRITICAL_HIGH": {
+        "value": 9
+      }
+    },
     "types": [
       {
         "id": "Priority",
@@ -25,7 +54,7 @@
           "priority": {
             "optional": true,
             "default": 1,
-            "description": "Priority ranges from 1 to 9. Default is 1.",
+            "description": "Priority ranges from PRIORITY_INFO_LOW to PRIORITY_CRITICAL_HIGH. Default is PRIORITY_INFO_LOW.",
             "$ref": "Priority"
           },
           "buttons": {
