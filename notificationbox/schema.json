@@ -30,6 +30,7 @@
           },
           "buttons": {
             "optional": true,
+            "default": [],
             "description": "Text and icons for up to two notification action buttons.",
             "type": "array",
             "items": { "$ref": "Button" }
@@ -43,7 +44,7 @@
         "properties": {
           "id": {
             "type": "string",
-            "desciption": "The id of the button. Is send in onButtonClicked events."
+            "desciption": "The id of the button. Is sent in onButtonClicked events."
           },
           "label": {
             "type": "string",
