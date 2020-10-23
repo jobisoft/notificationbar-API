@@ -59,7 +59,10 @@ class Notification {
       }
     };
 
-    this.getNotificationBox().appendNotification(options.label, notificationId, imageURL, options.priority, buttons, callback);
+    let element = this.getNotificationBox().appendNotification(options.label, notificationId, imageURL, options.priority, buttons, callback);
+    for (let key in options.style) {
+      element.style[key] = options.style[key];
+    }
   }
 
   getNotificationBox() {

@@ -70,6 +70,14 @@
             "description": "The placement of the notification.",
             "type": "string",
             "enum": ["default", "top", "bottom"]
+          },
+          "style": {
+            "optional": true,
+            "description": "Additional CSS to apply to the notification.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
           }
         }
       },
