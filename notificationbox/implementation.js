@@ -50,8 +50,13 @@ class Notification {
     };
 
     let element = this.getNotificationBox().appendNotification(options.label, `extension-notification-${notificationId}`, imageURL, options.priority, buttons, callback);
-    for (let key in options.style) {
-      element.style[key] = options.style[key];
+    let whitelist = ["background", "color", "margin", "padding", "font"];
+    let sanitizedStyles = Object.keys(options.style).filter(
+      style => whitelist.includes(style.split(/[\s-]+/).shift())
+    );   
+    
+    for (let style of sanitizedStyles) {
+      element.style[style] = options.style[style];
     }
   }
 

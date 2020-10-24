@@ -77,7 +77,7 @@
           },
           "style": {
             "optional": true,
-            "description": "Additional CSS to apply to the notification.",
+            "description": "Additional CSS styles to apply to the notification. Supported CSS properties are 'color', 'background*', 'margin*', 'padding*' and 'font*'",
             "type": "object",
             "additionalProperties": {
               "type": "string"

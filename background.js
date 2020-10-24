@@ -34,6 +34,12 @@ async function addBoxes(window) {
     label: "Sample notification top 1",
     placement: "top",
     priority: messenger.notificationbox.PRIORITY_WARNING_HIGH,
+    style: {
+      "color": "blue",
+      "font-weight": "bold",
+      "font-style": "italic",
+      "background-color": "green",
+    },
     buttons: [
       {
         id: "btn-direct",
