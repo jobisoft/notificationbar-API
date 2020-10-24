@@ -20,7 +20,7 @@ class Notification {
     this.options = options;
     this.parent = parent;
 
-    let imageURL = options.image
+    let imageURL = (options.image && !options.image.includes(":"))
       ? parent.extension.baseURI.resolve(options.image)
       : null;
    
