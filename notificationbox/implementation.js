@@ -59,7 +59,7 @@ class Notification {
         parts.length > 0 && 
         whitelist.includes(parts[0]) &&
         // validate second part (if any) being a simple word
-        (parts.length == 1 || parts.length == 2 && /^[a-zA-Z0-9]+$/.test(parts[1]))
+        (parts.length == 1 || (parts.length == 2 && /^[a-zA-Z0-9]+$/.test(parts[1])))
       );
     });   
     
