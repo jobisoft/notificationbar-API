@@ -33,9 +33,9 @@ class Notification {
         callback: function() {
           // Fire the event and keep the notification open, decided to close it
           // based on the return values later.
-          self.parent.emitter.emit("buttonclicked", self.notificationId, button.id).then((values) => {
-            let allTrue = values.every((value) => value === true);
-            if (!allTrue) {
+          self.parent.emitter.emit("buttonclicked", self.notificationId, button.id).then((rv) => {
+            let keepOpen = rv.some((value) => value?.close === false);            
+            if (!keepOpen) {
               self.remove(/* closedByUser */ true);
             }
           });
@@ -48,7 +48,6 @@ class Notification {
     });
 
     let callback = function(event) {
-      console.log(`Notification event ${self.notificationId}: ${event}`);
       // Every dismissed notification will also generate a removed notification
       if (event === "dismissed") {
         self.parent.emitter.emit("dismissed", self.notificationId);
