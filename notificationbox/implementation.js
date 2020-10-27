@@ -50,8 +50,23 @@ class Notification {
     };
 
     let element = this.getNotificationBox().appendNotification(options.label, `extension-notification-${notificationId}`, imageURL, options.priority, buttons, callback);
-    for (let key in options.style) {
-      element.style[key] = options.style[key];
+    let whitelist = ["background", "color", "margin", "padding", "font"];
+
+    if (options.style) {
+      let sanitizedStyles = Object.keys(options.style).filter(style => {
+        let parts = style.split("-");
+        return (
+          // check if first part is in whitelist
+          parts.length > 0 && 
+          whitelist.includes(parts[0]) &&
+          // validate second part (if any) being a simple word
+          (parts.length == 1 || (parts.length == 2 && /^[a-zA-Z0-9]+$/.test(parts[1])))
+        );
+      });   
+      
+      for (let style of sanitizedStyles) {
+        element.style[style] = options.style[style];
+      }
     }
   }
 
