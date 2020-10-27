@@ -26,6 +26,7 @@ browser.compose.onBeforeSend.addListener(async (tab, details) => {
   await browser.notificationbox.create(tab.windowId, "testID", {
     label: "Sample notification",
     priority: browser.notificationbox.PRIORITY_CRITICAL_HIGH,
+    image: "icon.png",
     buttons: [
       {
         id: "btn2",
