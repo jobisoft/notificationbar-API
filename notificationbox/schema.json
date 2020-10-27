@@ -75,10 +75,10 @@
           },
           "placement": {
             "optional": true,
-            "default": "default",
+            "default": "bottom",
             "description": "The placement of the notification.",
             "type": "string",
-            "enum": ["default", "top", "bottom"]
+            "enum": ["top", "bottom", "message"]
           },
           "style": {
             "optional": true,

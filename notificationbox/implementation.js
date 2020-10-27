@@ -65,60 +65,60 @@ class Notification {
   getNotificationBox() {
     let w = this.parent.extension.windowManager.get(this.options.windowId, this.parent.context).window;
     switch (this.options.placement) {
-      default:
+      case "message":
         {
+          // below the receipient list in the message preview window
           if (w.gMessageNotificationBar) {
-            console.log("gMessageNotificationBar");
             return w.gMessageNotificationBar.msgNotificationBar;
           }
-          if (w.specialTabs) {
-            console.log("specialTabs");
-            return w.specialTabs.msgNotificationBar;
-          }
-          if (w.gNotification) {
-            console.log("gNotification");
-            return w.gNotification.notificationbox;
-          }
         }
-        // If window has no default notification bar, "default" continues as "bottom"
         
       case "bottom":
         {
-          console.log("bottom");
-          if (w.gExtensionNotificationBottomBox) {
-            return w.gExtensionNotificationBottomBox;
+          // default bottom notification in the mail3:pane
+          if (w.specialTabs) {
+            return w.specialTabs.msgNotificationBar;
           }
-          let toolbox = w.document.querySelector("toolbox");
-          if (toolbox) {
+          // default bottom notification in message composer window and
+          // most calendar dialogs (currently windows.onCreated event does not see these)
+          if (w.gNotification) {
+            return w.gNotification.notificationbox;
+          }
+          // if there is no default bottom box, use our own
+          if (!w.gExtensionNotificationBottomBox) {
             w.gExtensionNotificationBottomBox = new w.MozElements.NotificationBox(element => {
               element.id = "extension-notification-bottom-box";
-              element.setAttribute("notificationside", "top");
-              toolbox.parentElement.insertBefore(element, toolbox.nextElementSibling);
+              element.setAttribute("notificationside", "bottom");
+              w.document.documentElement.append(element);
             });
-            return w.gExtensionNotificationBottomBox;
-          }
+          }            
+          return w.gExtensionNotificationBottomBox;
         }
         break;
         
       case "top":
         {
-          console.log("top");
-          if (w.gExtensionNotificationTopBox) {
-            return w.gExtensionNotificationTopBox;
+          if (!w.gExtensionNotificationTopBox) {
+            // try to add it before the toolbox, if that fails add it firstmost
+            let toolbox = w.document.querySelector("toolbox");
+            if (toolbox) {
+              w.gExtensionNotificationTopBox = new w.MozElements.NotificationBox(element => {
+                element.id = "extension-notification-top-box";
+                element.setAttribute("notificationside", "top");
+                toolbox.parentElement.insertBefore(element, toolbox.nextElementSibling);
+              });
+            } else {              
+              w.gExtensionNotificationTopBox = new w.MozElements.NotificationBox(element => {
+                element.id = "extension-notification-top-box";
+                element.setAttribute("notificationside", "top");
+                w.document.documentElement.insertBefore(element, w.document.documentElement.firstChild);                
+              });              
+            }
           }
-          let toolbox = w.document.querySelector("toolbox");
-          if (toolbox) {
-            w.gExtensionNotificationTopBox = new w.MozElements.NotificationBox(element => {
-              element.id = "extension-notification-top-box";
-              element.setAttribute("notificationside", "top");
-              toolbox.parentElement.insertBefore(element, toolbox.nextElementSibling);
-            });
-            return w.gExtensionNotificationTopBox;
-          }
+          return w.gExtensionNotificationTopBox;
         }
         break;
     }
-    throw new ExtensionError("Can't find a notification bar");
   }
   
   remove(closedByUser) {
@@ -149,9 +149,26 @@ var notificationbox = class extends ExtensionAPI {
     }
   }
 
+  observe(aSubject, aTopic, aData) {
+    let win = this.context.extension.windowManager.convert(aSubject);
+    this.notificationsMap.forEach((value, key) => {
+      if (value.options.windowId == win.id) {
+        this.notificationsMap.delete(key);
+      }
+    });
+  }
+  
+  close() {
+    Services.obs.removeObserver(this, "domwindowclosed");
+  }
+  
   getAPI(context) {
+
     this.context = context;
-    let self = this
+    let self = this;
+
+    context.callOnClose(this);
+    Services.obs.addObserver(this, "domwindowclosed", false);
 
     return {
       notificationbox: {
