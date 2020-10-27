@@ -4,17 +4,10 @@ var { EventEmitter, EventManager, ExtensionAPI } = ExtensionCommon;
 var { ExtensionError } = ExtensionUtils;
 var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyServiceGetters(this, {
-  UUIDGen: ["@mozilla.org/uuid-generator;1", "nsIUUIDGenerator"],
-});
-
-function uuid() {
-  return `notificationbox-${UUIDGen.generateUUID().number.substring(1, 37)}`;
-}
-
 class Notification {
-  constructor(options, parent) {
+  constructor(notificationId, options, parent) {
     this.closedByUser = true;
+    this.notificationId = notificationId;
     this.options = options;
     this.parent = parent;
 
@@ -31,7 +24,7 @@ class Notification {
         callback: function() {
           // Fire the event and keep the notification open, decided to close it
           // based on the return values later.
-          self.parent.emitter.emit("buttonclicked", self.options.windowId, self.options.notificationId, button.id).then((rv) => {
+          self.parent.emitter.emit("buttonclicked", self.options.windowId, self.notificationId, button.id).then((rv) => {
             let keepOpen = rv.some((value) => value?.close === false);            
             if (!keepOpen) {
               self.remove(/* closedByUser */ true);
@@ -48,15 +41,15 @@ class Notification {
     let callback = function(event) {
       // Every dismissed notification will also generate a removed notification
       if (event === "dismissed") {
-        self.parent.emitter.emit("dismissed", self.options.windowId, self.options.notificationId);
+        self.parent.emitter.emit("dismissed", self.options.windowId, self.notificationId);
       }
       if (event === "removed") {
-        self.parent.emitter.emit("closed", self.options.windowId, self.options.notificationId, self.closedByUser);
+        self.parent.emitter.emit("closed", self.options.windowId, self.notificationId, self.closedByUser);
         self.cleanup();
       }
     };
 
-    let element = this.getNotificationBox().appendNotification(options.label, options.notificationId, imageURL, options.priority, buttons, callback);
+    let element = this.getNotificationBox().appendNotification(options.label, `extension-notification-${notificationId}`, imageURL, options.priority, buttons, callback);
     for (let key in options.style) {
       element.style[key] = options.style[key];
     }
@@ -127,12 +120,12 @@ class Notification {
       //  defines the value of closedByUser which is used by the event emitter.
       this.closedByUser = closedByUser;
       let notificationBox = this.getNotificationBox();
-      let notification = notificationBox.getNotificationWithValue(this.options.notificationId);
+      let notification = notificationBox.getNotificationWithValue(`extension-notification-${this.notificationId}`);
       notificationBox.removeNotification(notification);
   }
 
   cleanup() {
-      this.parent.notificationsMap.delete(this.options.notificationId);    
+      this.parent.notificationsMap.delete(this.notificationId);    
   }
 }
 
@@ -141,6 +134,7 @@ var notificationbox = class extends ExtensionAPI {
     super(extension);
     this.notificationsMap = new Map();
     this.emitter = new EventEmitter();
+    this.nextId = 1;
   }
 
   onShutdown() {
@@ -149,6 +143,8 @@ var notificationbox = class extends ExtensionAPI {
     }
   }
 
+  // Observer for the domwindowclosed notification, to remove
+  // obsolete notifications from the notificationsMap.
   observe(aSubject, aTopic, aData) {
     let win = this.context.extension.windowManager.convert(aSubject);
     this.notificationsMap.forEach((value, key) => {
@@ -173,18 +169,9 @@ var notificationbox = class extends ExtensionAPI {
     return {
       notificationbox: {
         async create(options) {
-          if (!options.notificationId) {
-            do {
-              options.notificationId =uuid();
-            } while (self.notificationsMap.has(options.notificationId))
-          }
-
-          if (self.notificationsMap.has(options.notificationId)) {
-            self.notificationsMap.get(options.notificationId).remove(/* closedByUser */ false);
-          }
-
-          self.notificationsMap.set(options.notificationId, new Notification(options, self));
-          return options.notificationId;
+          let notificationId = self.nextId++;
+          self.notificationsMap.set(notificationId, new Notification(notificationId, options, self));
+          return notificationId;
         },
         
         async clear(notificationId) {

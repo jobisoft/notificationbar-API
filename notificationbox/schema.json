@@ -50,11 +50,6 @@
             "description": "Label of the notification.",
             "type": "string"
           },
-          "notificationId" : {
-            "description": "ID of the notification. If the provided ID matches an existing notification, this method first clears that notification before proceeding with the create operation. TODO: How to handle mismatch of windowId? Move? Ignore?",
-            "optional": true,
-            "type": "string"
-          },
           "image": {
             "optional": true,
             "description": "Path to an image to appear on the notification, path must be relative to the extensions root folder. Default is an appropriate icon for the priority level is used.",
