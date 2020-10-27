@@ -1,54 +1,100 @@
-browser.notificationbox.onButtonClicked.addListener((id, name) => {
-  console.log(`${name} clicked in ${id}`);
-  
-  if (["btn2"].includes(name)) {
-    console.log("Programatically closing!");
-    browser.notificationbox.clear(id);
-    return true;
-  }
-
-  if (["btn4"].includes(name)) {
-    console.log("Never gonna give you up!");
-    // returning true will keep the box open
-    return true;
+// Defining a onButtonClicked listener
+browser.notificationbox.onButtonClicked.addListener((windowId, notificationId, buttonId) => {
+  console.log(`Listener #1 sees: ${buttonId} clicked in box ${notificationId} in window ${windowId}.`);
+    if (["btn-keep"].includes(buttonId)) {
+    console.log("Box will not close, as long as one listener returns {close:false}.");
+    return {close: false};
   }
 });
 
-browser.notificationbox.onDismissed.addListener((id) => {
-  console.log(`${id} was dismissed`);
+// Defining another onButtonClicked listener
+browser.notificationbox.onButtonClicked.addListener((windowId, notificationId, buttonId) => {
+  console.log(`Listener #2 sees: ${buttonId} clicked in box ${notificationId} in window ${windowId}.`);
+  if (["btn-direct"].includes(buttonId)) {
+    console.log("Box will close as long no listener returns {close:false}.");
+  }
 });
 
-browser.notificationbox.onClosed.addListener((id, closedByUser) => {
-  console.log(`${id} was closed by user: ${closedByUser}`);
+// Defining a onDismissed listener
+browser.notificationbox.onDismissed.addListener((windowId, notificationId) => {
+  console.log(`${notificationId} in window ${windowId} was dismissed`);
 });
 
-browser.compose.onBeforeSend.addListener(async (tab, details) => {   
-  await browser.notificationbox.create(tab.windowId, "testID", {
-    label: "Sample notification",
-    priority: browser.notificationbox.PRIORITY_CRITICAL_HIGH,
-    image: "icon.png",
+// Defining a onClosed listener
+browser.notificationbox.onClosed.addListener((windowId, notificationId, closedByUser) => {
+  console.log(`${notificationId} in window ${windowId} was closed by user: ${closedByUser}`);
+});
+
+
+
+async function addBoxes(window) {
+  // adding a top box
+  await browser.notificationbox.create({
+    windowId: window.id,
+    label: "Sample notification top 1",
+    placement: "top",
+    priority: browser.notificationbox.PRIORITY_WARNING_HIGH,
     buttons: [
       {
-        id: "btn2",
-        label: "Delayed Close",
-        accesskey: "d",
-      },
-      {
-        id: "btn3",
-        label: "Okey-dokey",
+        id: "btn-direct",
+        label: "Close",
         accesskey: "o",
       },
       {
-        id: "btn4",
+        id: "btn-keep",
         label: "Stay!"
       }
     ]
   });
   
-  let data = await browser.notificationbox.getAll();
-  console.log(data);
-  
-  return { cancel: true };
-  
-});
+  // some default boxes to test stacking
+  await browser.notificationbox.create({
+    windowId: window.id,
+    label: "Sample notification default 1",
+    placement: "default",    
+  });
 
+  await browser.notificationbox.create({
+    windowId: window.id,
+    priority: browser.notificationbox.PRIORITY_WARNING_HIGH,
+    label: "Sample notification default 2",
+    placement: "default",    
+    buttons: [
+      {
+        id: "btn",
+        label: "Close",
+        accesskey: "d",
+      }
+    ]
+  });
+
+ await browser.notificationbox.create({
+    windowId: window.id,
+    label: "Sample notification default 3",
+    placement: "default",    
+  });
+
+
+  // a bottom box
+  await browser.notificationbox.create({
+    windowId: window.id,
+    label: "Sample notification bottom 1",
+    image: "icon.png",
+    placement: "bottom",    
+  });
+  
+  console.log(await browser.notificationbox.getAll());
+}
+
+
+
+// add boxes to all future windows
+browser.windows.onCreated.addListener(addBoxes);
+
+// add boxes to all existing windows
+browser.windows.getAll()
+  .then(windows => {
+    for (let window of windows) {
+      addBoxes(window);
+    }
+  });

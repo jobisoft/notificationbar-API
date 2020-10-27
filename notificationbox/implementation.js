@@ -13,10 +13,8 @@ function uuid() {
 }
 
 class Notification {
-  constructor(windowId, notificationId, options, parent) {
+  constructor(options, parent) {
     this.closedByUser = true;
-    this.windowId = windowId;
-    this.notificationId = notificationId;
     this.options = options;
     this.parent = parent;
 
@@ -33,7 +31,7 @@ class Notification {
         callback: function() {
           // Fire the event and keep the notification open, decided to close it
           // based on the return values later.
-          self.parent.emitter.emit("buttonclicked", self.notificationId, button.id).then((rv) => {
+          self.parent.emitter.emit("buttonclicked", self.options.windowId, self.options.notificationId, button.id).then((rv) => {
             let keepOpen = rv.some((value) => value?.close === false);            
             if (!keepOpen) {
               self.remove(/* closedByUser */ true);
@@ -50,47 +48,75 @@ class Notification {
     let callback = function(event) {
       // Every dismissed notification will also generate a removed notification
       if (event === "dismissed") {
-        self.parent.emitter.emit("dismissed", self.notificationId);
+        self.parent.emitter.emit("dismissed", self.options.windowId, self.options.notificationId);
       }
       if (event === "removed") {
-        self.parent.emitter.emit("closed", self.notificationId, self.closedByUser);
+        self.parent.emitter.emit("closed", self.options.windowId, self.options.notificationId, self.closedByUser);
         self.cleanup();
       }
     };
 
-    let element = this.getNotificationBox().appendNotification(options.label, notificationId, imageURL, options.priority, buttons, callback);
+    let element = this.getNotificationBox().appendNotification(options.label, options.notificationId, imageURL, options.priority, buttons, callback);
     for (let key in options.style) {
       element.style[key] = options.style[key];
     }
   }
 
   getNotificationBox() {
-    let w = this.parent.extension.windowManager.get(this.windowId, this.parent.context).window;
+    let w = this.parent.extension.windowManager.get(this.options.windowId, this.parent.context).window;
     switch (this.options.placement) {
-    default:
-      if (w.gMessageNotificationBar) {
-        return w.gMessageNotificationBar.msgNotificationBar;
-      }
-    case "bottom":
-      if (w.specialTabs) {
-        return wspecialTabs.msgNotificationBar;
-      }
-      if (w.gNotification) {
-        return w.gNotification.notificationbox;
-      }
-    case "top":
-      if (w.gExtensionNotificationBox) {
-        return w.gExtensionNotificationBox;
-      }
-      let toolbox = w.document.querySelector("toolbox");
-      if (toolbox) {
-        w.gExtensionNotificationBox = new w.MozElements.NotificationBox(element => {
-          element.id = "extension-notification-box";
-          element.setAttribute("notificationside", "top");
-          toolbox.parentElement.insertBefore(element, toolbox.nextElementSibling);
-        });
-        return w.gExtensionNotificationBox;
-      }
+      default:
+        {
+          if (w.gMessageNotificationBar) {
+            console.log("gMessageNotificationBar");
+            return w.gMessageNotificationBar.msgNotificationBar;
+          }
+          if (w.specialTabs) {
+            console.log("specialTabs");
+            return w.specialTabs.msgNotificationBar;
+          }
+          if (w.gNotification) {
+            console.log("gNotification");
+            return w.gNotification.notificationbox;
+          }
+        }
+        // If window has no default notification bar, "default" continues as "bottom"
+        
+      case "bottom":
+        {
+          console.log("bottom");
+          if (w.gExtensionNotificationBottomBox) {
+            return w.gExtensionNotificationBottomBox;
+          }
+          let toolbox = w.document.querySelector("toolbox");
+          if (toolbox) {
+            w.gExtensionNotificationBottomBox = new w.MozElements.NotificationBox(element => {
+              element.id = "extension-notification-bottom-box";
+              element.setAttribute("notificationside", "top");
+              toolbox.parentElement.insertBefore(element, toolbox.nextElementSibling);
+            });
+            return w.gExtensionNotificationBottomBox;
+          }
+        }
+        break;
+        
+      case "top":
+        {
+          console.log("top");
+          if (w.gExtensionNotificationTopBox) {
+            return w.gExtensionNotificationTopBox;
+          }
+          let toolbox = w.document.querySelector("toolbox");
+          if (toolbox) {
+            w.gExtensionNotificationTopBox = new w.MozElements.NotificationBox(element => {
+              element.id = "extension-notification-top-box";
+              element.setAttribute("notificationside", "top");
+              toolbox.parentElement.insertBefore(element, toolbox.nextElementSibling);
+            });
+            return w.gExtensionNotificationTopBox;
+          }
+        }
+        break;
     }
     throw new ExtensionError("Can't find a notification bar");
   }
@@ -101,12 +127,12 @@ class Notification {
       //  defines the value of closedByUser which is used by the event emitter.
       this.closedByUser = closedByUser;
       let notificationBox = this.getNotificationBox();
-      let notification = notificationBox.getNotificationWithValue(this.notificationId);
+      let notification = notificationBox.getNotificationWithValue(this.options.notificationId);
       notificationBox.removeNotification(notification);
   }
 
   cleanup() {
-      this.parent.notificationsMap.delete(this.notificationId);    
+      this.parent.notificationsMap.delete(this.options.notificationId);    
   }
 }
 
@@ -129,19 +155,19 @@ var notificationbox = class extends ExtensionAPI {
 
     return {
       notificationbox: {
-        async create(windowId, notificationId, options) {
-          if (!notificationId) {
+        async create(options) {
+          if (!options.notificationId) {
             do {
-              notificationId =uuid();
-            } while (self.notificationsMap.has(notificationId))
+              options.notificationId =uuid();
+            } while (self.notificationsMap.has(options.notificationId))
           }
 
-          if (self.notificationsMap.has(notificationId)) {
-            self.notificationsMap.get(notificationId).remove(/* closedByUser */ false);
+          if (self.notificationsMap.has(options.notificationId)) {
+            self.notificationsMap.get(options.notificationId).remove(/* closedByUser */ false);
           }
 
-          self.notificationsMap.set(notificationId, new Notification(windowId, notificationId, options, self));
-          return notificationId;
+          self.notificationsMap.set(options.notificationId, new Notification(options, self));
+          return options.notificationId;
         },
         
         async clear(notificationId) {
@@ -164,8 +190,8 @@ var notificationbox = class extends ExtensionAPI {
           context,
           name: "notificationbox.onDismissed",
           register: fire => {
-            let listener = (event, notificationId) => {
-              fire.async(notificationId);
+            let listener = (event, windowId, notificationId) => {
+              fire.async(windowId, notificationId);
             };
 
             self.emitter.on("dismissed", listener);
@@ -179,8 +205,8 @@ var notificationbox = class extends ExtensionAPI {
           context,
           name: "notificationbox.onClosed",
           register: fire => {
-            let listener = (event, notificationId, closedByUser) => {
-              fire.async(notificationId, closedByUser);
+            let listener = (event, windowId, notificationId, closedByUser) => {
+              fire.async(windowId, notificationId, closedByUser);
             };
 
             self.emitter.on("closed", listener);
@@ -194,8 +220,8 @@ var notificationbox = class extends ExtensionAPI {
           context,
           name: "notificationbox.onButtonClicked",
           register: fire => {
-            let listener = (event, notificationId, buttonId) => {
-              return fire.async(notificationId, buttonId);
+            let listener = (event, windowId, notificationId, buttonId) => {
+              return fire.async(windowId, notificationId, buttonId);
             };
 
             self.emitter.on("buttonclicked", listener);
