@@ -117,7 +117,7 @@ class Notification {
   remove(closedByUser) {
       // The remove() method is called by button clicks and by notificationBox.clear()
       // but not by dismissal. In that case, the default value defined in the constructor
-      //  defines the value of closedByUser which is used by the event emitter.
+      // defines the value of closedByUser which is used by the event emitter.
       this.closedByUser = closedByUser;
       let notificationBox = this.getNotificationBox();
       let notification = notificationBox.getNotificationWithValue(`extension-notification-${this.notificationId}`);
@@ -135,9 +135,11 @@ var notificationbox = class extends ExtensionAPI {
     this.notificationsMap = new Map();
     this.emitter = new EventEmitter();
     this.nextId = 1;
+    Services.obs.addObserver(this, "domwindowclosed", false);
   }
 
   onShutdown() {
+    Services.obs.removeObserver(this, "domwindowclosed");
     for (let notification of this.notificationsMap.values()) {
       notification.remove(/* closedByUser */ false);
     }
@@ -145,7 +147,7 @@ var notificationbox = class extends ExtensionAPI {
 
   // Observer for the domwindowclosed notification, to remove
   // obsolete notifications from the notificationsMap.
-  observe(aSubject, aTopic, aData) {
+  observe(aSubject, aTopic, aData) {    
     let win = this.context.extension.windowManager.convert(aSubject);
     this.notificationsMap.forEach((value, key) => {
       if (value.options.windowId == win.id) {
@@ -154,17 +156,10 @@ var notificationbox = class extends ExtensionAPI {
     });
   }
   
-  close() {
-    Services.obs.removeObserver(this, "domwindowclosed");
-  }
-  
+ 
   getAPI(context) {
-
     this.context = context;
     let self = this;
-
-    context.callOnClose(this);
-    Services.obs.addObserver(this, "domwindowclosed", false);
 
     return {
       notificationbox: {

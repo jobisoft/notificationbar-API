@@ -185,7 +185,7 @@
       {
         "name": "onClosed",
         "type": "function",
-        "description": "Fired when a notification has been closed (button, dismiss, or manually calling remove()).",
+        "description": "Fired when a notification has been closed (button, dismiss, or manually calling clear()).",
         "parameters": [
           {
             "type": "integer",

@@ -1,6 +1,6 @@
 // Defining a onButtonClicked listener
 messenger.notificationbox.onButtonClicked.addListener((windowId, notificationId, buttonId) => {
-  console.log(`Listener #1 sees: ${buttonId} clicked in box ${notificationId} in window ${windowId}.`);
+  console.log(`Listener #1 sees: button ${buttonId} clicked in notification ${notificationId} in window ${windowId}.`);
     if (["btn-keep"].includes(buttonId)) {
     console.log("Box will not close, as long as one listener returns {close:false}.");
     return {close: false};
@@ -9,7 +9,7 @@ messenger.notificationbox.onButtonClicked.addListener((windowId, notificationId,
 
 // Defining another onButtonClicked listener
 messenger.notificationbox.onButtonClicked.addListener((windowId, notificationId, buttonId) => {
-  console.log(`Listener #2 sees: ${buttonId} clicked in box ${notificationId} in window ${windowId}.`);
+  console.log(`Listener #2 sees: button ${buttonId} clicked in notification ${notificationId} in window ${windowId}.`);
   if (["btn-direct"].includes(buttonId)) {
     console.log("Box will close as long no listener returns {close:false}.");
   }
@@ -17,12 +17,12 @@ messenger.notificationbox.onButtonClicked.addListener((windowId, notificationId,
 
 // Defining a onDismissed listener
 messenger.notificationbox.onDismissed.addListener((windowId, notificationId) => {
-  console.log(`${notificationId} in window ${windowId} was dismissed`);
+  console.log(`notification ${notificationId} in window ${windowId} was dismissed`);
 });
 
 // Defining a onClosed listener
 messenger.notificationbox.onClosed.addListener((windowId, notificationId, closedByUser) => {
-  console.log(`${notificationId} in window ${windowId} was closed by user: ${closedByUser}`);
+  console.log(`notification ${notificationId} in window ${windowId} was closed by user: ${closedByUser}`);
 });
 
 
@@ -47,12 +47,7 @@ async function addBoxes(window) {
     ]
   });
   
-  // some default boxes to test stacking
-  await messenger.notificationbox.create({
-    windowId: window.id,
-    label: "Sample notification default 1",
-  });
-
+  // adding a default box
   await messenger.notificationbox.create({
     windowId: window.id,
     priority: messenger.notificationbox.PRIORITY_CRITICAL_HIGH,
@@ -88,6 +83,7 @@ messenger.windows.getAll()
     }
   });
   
+  // open a custom window to see notification bars there as well
   messenger.windows.create({
                 height: 200,
                 width: 510,
