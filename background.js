@@ -1,5 +1,5 @@
 // Defining a onButtonClicked listener
-messenger.notificationbox.onButtonClicked.addListener((windowId, notificationId, buttonId) => {
+messenger.notificationbar.onButtonClicked.addListener((windowId, notificationId, buttonId) => {
   console.log(`Listener #1 sees: button ${buttonId} clicked in notification ${notificationId} in window ${windowId}.`);
     if (["btn-keep"].includes(buttonId)) {
     console.log("Box will not close, as long as one listener returns {close:false}.");
@@ -8,7 +8,7 @@ messenger.notificationbox.onButtonClicked.addListener((windowId, notificationId,
 });
 
 // Defining another onButtonClicked listener
-messenger.notificationbox.onButtonClicked.addListener((windowId, notificationId, buttonId) => {
+messenger.notificationbar.onButtonClicked.addListener((windowId, notificationId, buttonId) => {
   console.log(`Listener #2 sees: button ${buttonId} clicked in notification ${notificationId} in window ${windowId}.`);
   if (["btn-direct"].includes(buttonId)) {
     console.log("Box will close as long no listener returns {close:false}.");
@@ -16,12 +16,12 @@ messenger.notificationbox.onButtonClicked.addListener((windowId, notificationId,
 });
 
 // Defining a onDismissed listener
-messenger.notificationbox.onDismissed.addListener((windowId, notificationId) => {
+messenger.notificationbar.onDismissed.addListener((windowId, notificationId) => {
   console.log(`notification ${notificationId} in window ${windowId} was dismissed`);
 });
 
 // Defining a onClosed listener
-messenger.notificationbox.onClosed.addListener((windowId, notificationId, closedByUser) => {
+messenger.notificationbar.onClosed.addListener((windowId, notificationId, closedByUser) => {
   console.log(`notification ${notificationId} in window ${windowId} was closed by user: ${closedByUser}`);
 });
 
@@ -29,11 +29,11 @@ messenger.notificationbox.onClosed.addListener((windowId, notificationId, closed
 
 async function addBoxes(window) {
   // adding a top box
-  await messenger.notificationbox.create({
+  await messenger.notificationbar.create({
     windowId: window.id,
     label: "Sample notification top 1",
     placement: "top",
-    priority: messenger.notificationbox.PRIORITY_WARNING_HIGH,
+    priority: messenger.notificationbar.PRIORITY_WARNING_HIGH,
     style: {
       "color": "blue",
       "font-weight": "bold",
@@ -54,9 +54,9 @@ async function addBoxes(window) {
   });
   
   // adding a default box
-  await messenger.notificationbox.create({
+  await messenger.notificationbar.create({
     windowId: window.id,
-    priority: messenger.notificationbox.PRIORITY_CRITICAL_HIGH,
+    priority: messenger.notificationbar.PRIORITY_CRITICAL_HIGH,
     label: "Sample notification default 2",
     buttons: [
       {
@@ -68,10 +68,10 @@ async function addBoxes(window) {
   });
 
   // a bottom box
-  await messenger.notificationbox.create({
+  await messenger.notificationbar.create({
     windowId: window.id,
     label: "Sample notification bottom 1",
-    image: "icon.png",
+    icon: "icon.png",
     placement: "bottom",    
   });
 }

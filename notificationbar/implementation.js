@@ -144,7 +144,7 @@ class Notification {
   }
 }
 
-var notificationbox = class extends ExtensionAPI {
+var notificationbar = class extends ExtensionAPI {
   constructor(extension) {
     super(extension);
     this.notificationsMap = new Map();
@@ -177,7 +177,7 @@ var notificationbox = class extends ExtensionAPI {
     let self = this;
 
     return {
-      notificationbox: {
+      notificationbar: {
         async create(properties) {
           let notificationId = self.nextId++;
           self.notificationsMap.set(notificationId, new Notification(notificationId, properties, self));
@@ -202,7 +202,7 @@ var notificationbox = class extends ExtensionAPI {
 
         onDismissed: new EventManager({
           context,
-          name: "notificationbox.onDismissed",
+          name: "notificationbar.onDismissed",
           register: fire => {
             let listener = (event, windowId, notificationId) => {
               fire.async(windowId, notificationId);
@@ -217,7 +217,7 @@ var notificationbox = class extends ExtensionAPI {
 
         onClosed: new EventManager({
           context,
-          name: "notificationbox.onClosed",
+          name: "notificationbar.onClosed",
           register: fire => {
             let listener = (event, windowId, notificationId, closedByUser) => {
               fire.async(windowId, notificationId, closedByUser);
@@ -232,7 +232,7 @@ var notificationbox = class extends ExtensionAPI {
 
         onButtonClicked: new EventManager({
           context,
-          name: "notificationbox.onButtonClicked",
+          name: "notificationbar.onButtonClicked",
           register: fire => {
             let listener = (event, windowId, notificationId, buttonId) => {
               return fire.async(windowId, notificationId, buttonId);
