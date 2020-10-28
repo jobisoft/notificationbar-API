@@ -5,18 +5,18 @@ var { ExtensionError } = ExtensionUtils;
 var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 class Notification {
-  constructor(notificationId, options, parent) {
+  constructor(notificationId, properties, parent) {
     this.closedByUser = true;
     this.notificationId = notificationId;
-    this.options = options;
+    this.properties = properties;
     this.parent = parent;
 
-    let imageURL = (options.image && !options.image.includes(":"))
-      ? parent.extension.baseURI.resolve(options.image)
+    let iconURL = (properties.icon && !properties.icon.includes(":"))
+      ? parent.extension.baseURI.resolve(properties.icon)
       : null;
    
     let self = this;
-    let buttons = options.buttons.map(function(button) {
+    let buttons = properties.buttons.map(function(button) {
       return {
         id: button.id,
         label: button.label,
@@ -24,7 +24,7 @@ class Notification {
         callback: function() {
           // Fire the event and keep the notification open, decided to close it
           // based on the return values later.
-          self.parent.emitter.emit("buttonclicked", self.options.windowId, self.notificationId, button.id).then((rv) => {
+          self.parent.emitter.emit("buttonclicked", self.properties.windowId, self.notificationId, button.id).then((rv) => {
             let keepOpen = rv.some((value) => value?.close === false);            
             if (!keepOpen) {
               self.remove(/* closedByUser */ true);
@@ -41,19 +41,19 @@ class Notification {
     let callback = function(event) {
       // Every dismissed notification will also generate a removed notification
       if (event === "dismissed") {
-        self.parent.emitter.emit("dismissed", self.options.windowId, self.notificationId);
+        self.parent.emitter.emit("dismissed", self.properties.windowId, self.notificationId);
       }
       if (event === "removed") {
-        self.parent.emitter.emit("closed", self.options.windowId, self.notificationId, self.closedByUser);
+        self.parent.emitter.emit("closed", self.properties.windowId, self.notificationId, self.closedByUser);
         self.cleanup();
       }
     };
 
-    let element = this.getNotificationBox().appendNotification(options.label, `extension-notification-${notificationId}`, imageURL, options.priority, buttons, callback);
+    let element = this.getNotificationBox().appendNotification(properties.label, `extension-notification-${notificationId}`, iconURL, properties.priority, buttons, callback);
     let whitelist = ["background", "color", "margin", "padding", "font"];
 
-    if (options.style) {
-      let sanitizedStyles = Object.keys(options.style).filter(style => {
+    if (properties.style) {
+      let sanitizedStyles = Object.keys(properties.style).filter(style => {
         let parts = style.split("-");
         return (
           // check if first part is in whitelist
@@ -65,14 +65,14 @@ class Notification {
       });   
       
       for (let style of sanitizedStyles) {
-        element.style[style] = options.style[style];
+        element.style[style] = properties.style[style];
       }
     }
   }
 
   getNotificationBox() {
-    let w = this.parent.extension.windowManager.get(this.options.windowId, this.parent.context).window;
-    switch (this.options.placement) {
+    let w = this.parent.extension.windowManager.get(this.properties.windowId, this.parent.context).window;
+    switch (this.properties.placement) {
       case "message":
         {
           // below the receipient list in the message preview window
@@ -165,7 +165,7 @@ var notificationbox = class extends ExtensionAPI {
   observe(aSubject, aTopic, aData) {    
     let win = this.context.extension.windowManager.convert(aSubject);
     this.notificationsMap.forEach((value, key) => {
-      if (value.options.windowId == win.id) {
+      if (value.properties.windowId == win.id) {
         this.notificationsMap.delete(key);
       }
     });
@@ -178,9 +178,9 @@ var notificationbox = class extends ExtensionAPI {
 
     return {
       notificationbox: {
-        async create(options) {
+        async create(properties) {
           let notificationId = self.nextId++;
-          self.notificationsMap.set(notificationId, new Notification(notificationId, options, self));
+          self.notificationsMap.set(notificationId, new Notification(notificationId, properties, self));
           return notificationId;
         },
         
@@ -195,7 +195,7 @@ var notificationbox = class extends ExtensionAPI {
         async getAll() {
           let result = {};
           self.notificationsMap.forEach((value, key) => {
-            result[key] = value.options;
+            result[key] = value.properties;
           });
           return result;
         },
