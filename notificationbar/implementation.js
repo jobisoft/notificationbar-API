@@ -1,3 +1,5 @@
+/*eslint no-fallthrough: ["error", { "commentPattern": "break[\\s\\w]*omitted" }]*/
+
 "use strict";
 
 var { EventEmitter, EventManager, ExtensionAPI } = ExtensionCommon;
@@ -101,77 +103,70 @@ class Notification {
       this.parent.context
     ).window;
     switch (this.properties.placement) {
-      case "message": {
+      case "message":
         // below the receipient list in the message preview window
         if (w.gMessageNotificationBar) {
           return w.gMessageNotificationBar.msgNotificationBar;
         }
-      }
+      // break omitted
 
+      default:
       case "bottom":
-        {
-          // default bottom notification in the mail3:pane
-          if (w.specialTabs) {
-            return w.specialTabs.msgNotificationBar;
-          }
-          // default bottom notification in message composer window and
-          // most calendar dialogs (currently windows.onCreated event does not see these)
-          if (w.gNotification) {
-            return w.gNotification.notificationbox;
-          }
-          // if there is no default bottom box, use our own
-          if (!w.gExtensionNotificationBottomBox) {
-            let statusbar = w.document.querySelector(
-              'hbox[class~="statusbar"]'
-            );
-            w.gExtensionNotificationBottomBox = new w.MozElements.NotificationBox(
+        // default bottom notification in the mail3:pane
+        if (w.specialTabs) {
+          return w.specialTabs.msgNotificationBar;
+        }
+        // default bottom notification in message composer window and
+        // most calendar dialogs (currently windows.onCreated event does not see these)
+        if (w.gNotification) {
+          return w.gNotification.notificationbox;
+        }
+        // if there is no default bottom box, use our own
+        if (!w.gExtensionNotificationBottomBox) {
+          let statusbar = w.document.querySelector('hbox[class~="statusbar"]');
+          w.gExtensionNotificationBottomBox = new w.MozElements.NotificationBox(
+            element => {
+              element.id = "extension-notification-bottom-box";
+              element.setAttribute("notificationside", "bottom");
+              if (statusbar) {
+                w.document.documentElement.insertBefore(element, statusbar);
+              } else {
+                w.document.documentElement.append(element);
+              }
+            }
+          );
+        }
+        return w.gExtensionNotificationBottomBox;
+
+      case "top":
+        if (!w.gExtensionNotificationTopBox) {
+          // try to add it before the toolbox, if that fails add it firstmost
+          let toolbox = w.document.querySelector("toolbox");
+          if (toolbox) {
+            w.gExtensionNotificationTopBox = new w.MozElements.NotificationBox(
               element => {
-                element.id = "extension-notification-bottom-box";
-                element.setAttribute("notificationside", "bottom");
-                if (statusbar) {
-                  w.document.documentElement.insertBefore(element, statusbar);
-                } else {
-                  w.document.documentElement.append(element);
-                }
+                element.id = "extension-notification-top-box";
+                element.setAttribute("notificationside", "top");
+                toolbox.parentElement.insertBefore(
+                  element,
+                  toolbox.nextElementSibling
+                );
+              }
+            );
+          } else {
+            w.gExtensionNotificationTopBox = new w.MozElements.NotificationBox(
+              element => {
+                element.id = "extension-notification-top-box";
+                element.setAttribute("notificationside", "top");
+                w.document.documentElement.insertBefore(
+                  element,
+                  w.document.documentElement.firstChild
+                );
               }
             );
           }
-          return w.gExtensionNotificationBottomBox;
         }
-        break;
-
-      case "top":
-        {
-          if (!w.gExtensionNotificationTopBox) {
-            // try to add it before the toolbox, if that fails add it firstmost
-            let toolbox = w.document.querySelector("toolbox");
-            if (toolbox) {
-              w.gExtensionNotificationTopBox = new w.MozElements.NotificationBox(
-                element => {
-                  element.id = "extension-notification-top-box";
-                  element.setAttribute("notificationside", "top");
-                  toolbox.parentElement.insertBefore(
-                    element,
-                    toolbox.nextElementSibling
-                  );
-                }
-              );
-            } else {
-              w.gExtensionNotificationTopBox = new w.MozElements.NotificationBox(
-                element => {
-                  element.id = "extension-notification-top-box";
-                  element.setAttribute("notificationside", "top");
-                  w.document.documentElement.insertBefore(
-                    element,
-                    w.document.documentElement.firstChild
-                  );
-                }
-              );
-            }
-          }
-          return w.gExtensionNotificationTopBox;
-        }
-        break;
+        return w.gExtensionNotificationTopBox;
     }
   }
 
