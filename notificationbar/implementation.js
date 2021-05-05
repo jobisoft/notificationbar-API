@@ -13,58 +13,57 @@ class Notification {
     this.properties = properties;
     this.parent = parent;
 
-    let iconURL =
+    const iconURL =
       properties.icon && !properties.icon.includes(':')
         ? parent.extension.baseURI.resolve(properties.icon)
         : null;
 
-    let self = this;
-    let buttons = properties.buttons.map(function (button) {
-      return {
-        id: button.id,
-        label: button.label,
-        accesskey: button.accesskey,
-        callback() {
-          // Fire the event and keep the notification open, decided to close it
-          // based on the return values later.
-          self.parent.emitter
-            .emit(
-              'buttonclicked',
-              self.properties.windowId,
-              self.notificationId,
-              button.id
-            )
-            .then((rv) => {
-              let keepOpen = rv.some((value) => value?.close === false);
-              if (!keepOpen) {
-                self.remove(/* closedByUser */ true);
-              }
-            });
+    const buttons = properties.buttons.map(({ id, label, accesskey }) => ({
+      id: id,
+      label: label,
+      accesskey: accesskey,
+      callback: () => {
+        // Fire the event and keep the notification open, decided to close it
+        // based on the return values later.
+        this.parent.emitter
+          .emit(
+            'buttonclicked',
+            this.properties.windowId,
+            this.notificationId,
+            id
+          )
+          .then((rv) => {
+            let keepOpen = rv.some((value) => value?.close === false);
+            if (!keepOpen) {
+              this.remove(/* closedByUser */ true);
+            }
+          });
 
-          // Keep the notification box open until we hear from the event
-          // handlers.
-          return true;
-        },
-      };
-    });
+        // Keep the notification box open until we hear from the event
+        // handlers.
+        return true;
+      },
+    }));
 
-    let callback = function (event) {
+    const callback = (event) => {
       // Every dismissed notification will also generate a removed notification
       if (event === 'dismissed') {
-        self.parent.emitter.emit(
+        this.parent.emitter.emit(
           'dismissed',
-          self.properties.windowId,
-          self.notificationId
+          this.properties.windowId,
+          this.notificationId
         );
       }
+
       if (event === 'removed') {
-        self.parent.emitter.emit(
+        this.parent.emitter.emit(
           'closed',
-          self.properties.windowId,
-          self.notificationId,
-          self.closedByUser
+          this.properties.windowId,
+          this.notificationId,
+          this.closedByUser
         );
-        self.cleanup();
+
+        this.cleanup();
       }
     };
 
@@ -121,7 +120,7 @@ class Notification {
   }
 
   getNotificationBox() {
-    let w = this.parent.extension.windowManager.get(
+    const w = this.parent.extension.windowManager.get(
       this.properties.windowId,
       this.parent.context
     ).window;
@@ -164,7 +163,7 @@ class Notification {
       case 'top':
         if (!w.gExtensionNotificationTopBox) {
           // try to add it before the toolbox, if that fails add it firstmost
-          let toolbox = w.document.querySelector('toolbox');
+          const toolbox = w.document.querySelector('toolbox');
           if (toolbox) {
             w.gExtensionNotificationTopBox = new w.MozElements.NotificationBox(
               (element) => {
@@ -198,8 +197,8 @@ class Notification {
     // but not by dismissal. In that case, the default value defined in the constructor
     // defines the value of closedByUser which is used by the event emitter.
     this.closedByUser = closedByUser;
-    let notificationBox = this.getNotificationBox();
-    let notification = notificationBox.getNotificationWithValue(
+    const notificationBox = this.getNotificationBox();
+    const notification = notificationBox.getNotificationWithValue(
       `extension-notification-${this.notificationId}`
     );
     notificationBox.removeNotification(notification);
