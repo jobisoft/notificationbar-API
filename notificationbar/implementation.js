@@ -9,29 +9,26 @@ var { Services } = ChromeUtils.import('resource://gre/modules/Services.jsm');
 class Notification {
   constructor(notificationId, properties, parent) {
     this.closedByUser = true;
-    this.notificationId = notificationId;
     this.properties = properties;
     this.parent = parent;
+    this.notificationId = notificationId;
+
+    const { buttons, icon, label, priority, style, windowId } = properties;
 
     const iconURL =
-      properties.icon && !properties.icon.includes(':')
-        ? parent.extension.baseURI.resolve(properties.icon)
+      icon && !icon.includes(':')
+        ? parent.extension.baseURI.resolve(icon)
         : null;
 
-    const buttons = properties.buttons.map(({ id, label, accesskey }) => ({
-      id: id,
-      label: label,
-      accesskey: accesskey,
+    const buttonSet = buttons.map(({ id, label, accesskey }) => ({
+      id,
+      label,
+      accesskey,
       callback: () => {
         // Fire the event and keep the notification open, decided to close it
         // based on the return values later.
         this.parent.emitter
-          .emit(
-            'buttonclicked',
-            this.properties.windowId,
-            this.notificationId,
-            id
-          )
+          .emit('buttonclicked', windowId, notificationId, id)
           .then((rv) => {
             let keepOpen = rv.some((value) => value?.close === false);
             if (!keepOpen) {
@@ -45,21 +42,17 @@ class Notification {
       },
     }));
 
-    const callback = (event) => {
+    const notificationBarCallback = (event) => {
       // Every dismissed notification will also generate a removed notification
       if (event === 'dismissed') {
-        this.parent.emitter.emit(
-          'dismissed',
-          this.properties.windowId,
-          this.notificationId
-        );
+        this.parent.emitter.emit('dismissed', windowId, notificationId);
       }
 
       if (event === 'removed') {
         this.parent.emitter.emit(
           'closed',
-          this.properties.windowId,
-          this.notificationId,
+          windowId,
+          notificationId,
           this.closedByUser
         );
 
@@ -70,30 +63,30 @@ class Notification {
     let element;
     if (this.getThunderbirdVersion().major < 94) {
       element = this.getNotificationBox().appendNotification(
-        properties.label,
+        label,
         `extension-notification-${notificationId}`,
         iconURL,
-        properties.priority,
-        buttons,
-        callback
+        priority,
+        buttonSet,
+        notificationBarCallback
       );
     } else {
       element = this.getNotificationBox().appendNotification(
         `extension-notification-${notificationId}`,
         {
-          label: properties.label,
+          label,
           image: iconURL,
-          priority: properties.priority,
+          priority,
         },
-        buttons,
-        callback
+        buttonSet,
+        notificationBarCallback
       );
     }
     let whitelist = ["background", "color", "margin", "padding", "font"];
 
-    if (properties.style) {
-      let sanitizedStyles = Object.keys(properties.style).filter((style) => {
-        let parts = style.split('-');
+    if (style) {
+      const sanitizedStyles = Object.keys(style).filter((cssPropertyName) => {
+        const parts = cssPropertyName.split('-');
         return (
           // check if first part is in whitelist
           parts.length > 0 &&
@@ -104,8 +97,8 @@ class Notification {
         );
       });
 
-      for (let style of sanitizedStyles) {
-        element.style[style] = properties.style[style];
+      for (let cssPropertyName of sanitizedStyles) {
+        element.style[cssPropertyName] = style[cssPropertyName];
       }
     }
   }
@@ -238,12 +231,12 @@ var notificationbar = class extends ExtensionAPI {
 
   getAPI(context) {
     this.context = context;
-    let self = this;
+    const self = this;
 
     return {
       notificationbar: {
         async create(properties) {
-          let notificationId = self.nextId++;
+          const notificationId = self.nextId++;
           self.notificationsMap.set(
             notificationId,
             new Notification(notificationId, properties, self)
@@ -262,7 +255,7 @@ var notificationbar = class extends ExtensionAPI {
         },
 
         async getAll() {
-          let result = {};
+          const result = {};
           self.notificationsMap.forEach((value, key) => {
             result[key] = value.properties;
           });
@@ -273,9 +266,8 @@ var notificationbar = class extends ExtensionAPI {
           context,
           name: 'notificationbar.onDismissed',
           register: (fire) => {
-            let listener = (event, windowId, notificationId) => {
+            const listener = (event, windowId, notificationId) =>
               fire.async(windowId, notificationId);
-            };
 
             self.emitter.on('dismissed', listener);
             return () => {
@@ -288,9 +280,8 @@ var notificationbar = class extends ExtensionAPI {
           context,
           name: 'notificationbar.onClosed',
           register: (fire) => {
-            let listener = (event, windowId, notificationId, closedByUser) => {
+            const listener = (event, windowId, notificationId, closedByUser) =>
               fire.async(windowId, notificationId, closedByUser);
-            };
 
             self.emitter.on('closed', listener);
             return () => {
@@ -303,9 +294,8 @@ var notificationbar = class extends ExtensionAPI {
           context,
           name: 'notificationbar.onButtonClicked',
           register: (fire) => {
-            let listener = (event, windowId, notificationId, buttonId) => {
-              return fire.async(windowId, notificationId, buttonId);
-            };
+            const listener = (event, windowId, notificationId, buttonId) =>
+              fire.async(windowId, notificationId, buttonId);
 
             self.emitter.on('buttonclicked', listener);
             return () => {
