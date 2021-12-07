@@ -82,7 +82,13 @@ class Notification {
         notificationBarCallback
       );
     }
-    let whitelist = ["background", "color", "margin", "padding", "font"];
+    let allowedCssPropNames = [
+      'background',
+      'color',
+      'margin',
+      'padding',
+      'font',
+    ];
 
     if (style) {
       const sanitizedStyles = Object.keys(style).filter((cssPropertyName) => {
@@ -90,7 +96,7 @@ class Notification {
         return (
           // check if first part is in whitelist
           parts.length > 0 &&
-          whitelist.includes(parts[0]) &&
+          allowedCssPropNames.includes(parts[0]) &&
           // validate second part (if any) being a simple word
           (parts.length == 1 ||
             (parts.length == 2 && /^[a-zA-Z0-9]+$/.test(parts[1])))
@@ -104,12 +110,14 @@ class Notification {
   }
 
   getThunderbirdVersion() {
-    let parts = Services.appinfo.version.split(".");
+    let [major, minor, revision = 0] = Services.appinfo.version
+      .split('.')
+      .map((chunk) => parseInt(chunk, 10));
     return {
-      major: parseInt(parts[0]),
-      minor: parseInt(parts[1]),
-      revision: parts.length > 2 ? parseInt(parts[2]) : 0,
-    }
+      major,
+      minor,
+      revision,
+    };
   }
 
   getNotificationBox() {
