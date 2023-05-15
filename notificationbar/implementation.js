@@ -6,19 +6,22 @@ var { EventEmitter, EventManager, ExtensionAPI } = ExtensionCommon;
 var { ExtensionError } = ExtensionUtils;
 var { Services } = ChromeUtils.import('resource://gre/modules/Services.jsm');
 
-class Notification {
+const SuperNovaFirstMajorVersion = 112;
+
+class ExtensionNotification {
   constructor(notificationId, properties, parent) {
     this.closedByUser = true;
     this.properties = properties;
     this.parent = parent;
     this.notificationId = notificationId;
+    this._getNotificationBox = null;
 
-    const { buttons, icon, label, priority, style, windowId } = properties;
+    const { buttons, icon, label, priority, style, windowId , tabId, tabIndex } = properties;
 
     const iconURL =
-      icon && !icon.includes(':')
-        ? parent.extension.baseURI.resolve(icon)
-        : null;
+        icon && !icon.includes(':')
+            ? parent.extension.baseURI.resolve(icon)
+            : null;
 
     const buttonSet = buttons.map(({ id, label, accesskey }) => ({
       id,
@@ -28,13 +31,13 @@ class Notification {
         // Fire the event and keep the notification open, decided to close it
         // based on the return values later.
         this.parent.emitter
-          .emit('buttonclicked', windowId, notificationId, id)
-          .then((rv) => {
-            let keepOpen = rv.some((value) => value?.close === false);
-            if (!keepOpen) {
-              this.remove(/* closedByUser */ true);
-            }
-          });
+            .emit('buttonclicked', windowId, notificationId, id)
+            .then((rv) => {
+              let keepOpen = rv.some((value) => value?.close === false);
+              if (!keepOpen) {
+                this.remove(/* closedByUser */ true);
+              }
+            });
 
         // Keep the notification box open until we hear from the event
         // handlers.
@@ -50,59 +53,76 @@ class Notification {
 
       if (event === 'removed') {
         this.parent.emitter.emit(
-          'closed',
-          windowId,
-          notificationId,
-          this.closedByUser
+            'closed',
+            windowId,
+            notificationId,
+            this.closedByUser
         );
 
         this.cleanup();
       }
     };
 
-    let element;
-    if (this.getThunderbirdVersion().major < 94) {
-      element = this.getNotificationBox().appendNotification(
-        label,
-        `extension-notification-${notificationId}`,
-        iconURL,
-        priority,
-        buttonSet,
-        notificationBarCallback
-      );
-    } else {
-      element = this.getNotificationBox().appendNotification(
-        `extension-notification-${notificationId}`,
-        {
-          label,
-          image: iconURL,
+    let notification = null;
+    const TBMajorVersion = this.getThunderbirdVersion().major
+    switch(true) {
+      case TBMajorVersion < 94:
+        notification= [label,
+          `extension-notification-${notificationId}`,
+          iconURL,
           priority,
-        },
-        buttonSet,
-        notificationBarCallback
-      );
+          buttonSet,
+          notificationBarCallback];
+        this._getNotificationBox = this.getNotificationBox;
+        break;
+      case TBMajorVersion >= SuperNovaFirstMajorVersion:
+        notification=[`extension-notification-${notificationId}`,
+          {
+            label,
+            image: iconURL,
+            priority,
+            eventCallback: notificationBarCallback,
+          },
+          buttonSet,
+          notificationBarCallback];
+        this._getNotificationBox = this.getNotificationBoxForSupernova;
+        break;
+      default:
+        notification=[`extension-notification-${notificationId}`,
+          {
+            label,
+            image: iconURL,
+            priority,
+            eventCallback: notificationBarCallback,
+          },
+          buttonSet,
+          notificationBarCallback];
+        this._getNotificationBox = this.getNotificationBox;
+        break;
     }
-    let allowedCssPropNames = [
-      'background',
-      'color',
-      'margin',
-      'padding',
-      'font',
-    ];
+    const element = this._getNotificationBox.apply(this).appendNotification(...notification);
+    if (!element)
+      return;
 
     if (style) {
+      const allowedCssPropNames = [
+        'background',
+        'color',
+        'margin',
+        'padding',
+        'font',
+      ];
       const sanitizedStyles = Object.keys(style).filter((cssPropertyName) => {
         const parts = cssPropertyName.split('-');
         return (
-          // check if first part is in whitelist
-          parts.length > 0 &&
-          allowedCssPropNames.includes(parts[0]) &&
-          // validate second part (if any) being a simple word
-          (parts.length == 1 ||
-            (parts.length == 2 && /^[a-zA-Z0-9]+$/.test(parts[1])))
+            // check if first part is in whitelist
+            parts.length > 0 &&
+            allowedCssPropNames.includes(parts[0]) &&
+            // validate second part (if any) being a simple word
+            (parts.length === 1 ||
+                (parts.length === 2 && /^[a-zA-Z0-9]+$/.test(parts[1])))
         );
       });
-
       for (let cssPropertyName of sanitizedStyles) {
         element.style[cssPropertyName] = style[cssPropertyName];
       }
@@ -111,8 +131,8 @@ class Notification {
 
   getThunderbirdVersion() {
     let [major, minor, revision = 0] = Services.appinfo.version
-      .split('.')
-      .map((chunk) => parseInt(chunk, 10));
+        .split('.')
+        .map((chunk) => parseInt(chunk, 10));
     return {
       major,
       minor,
@@ -120,10 +140,108 @@ class Notification {
     };
   }
 
+  getNotificationBoxForSupernova() {
+    switch (this.properties.placement) {
+      case 'message':
+        if (!this.properties.tabId) {
+          throw new Error("appendNotification - missing tab id");
+        }
+        const aTab = this.parent.context.extension.tabManager.get(this.properties.tabId);
+        let aWindow = aTab.nativeTab?.chromeBrowser?.contentWindow;
+        if (aWindow && aWindow.gMessageNotificationBar) {
+          aWindow.gMessageNotificationBar.msgNotificationBar;
+          return aWindow.gMessageNotificationBar.msgNotificationBar;
+        } else {
+          aWindow=aTab.window[0];
+          if (aWindow && aWindow.gMessageNotificationBar) {
+            aWindow.gMessageNotificationBar.msgNotificationBar;
+            return aWindow.gMessageNotificationBar.msgNotificationBar;
+          } else {
+            aWindow = this.parent.extension.windowManager.get(
+                this.properties.windowId,
+                this.parent.context
+            )
+            for (let i=0;i<aWindow?.window.length;i++) {
+              if (aWindow.window[i]?.name==="messageBrowser") {
+                aWindow = this.parent.extension.windowManager.get(
+                    this.properties.windowId,
+                    this.parent.context
+                )
+                return aWindow.gMessageNotificationBar.msgNotificationBar;
+              }
+            }
+            if (aTab.window.specialTabs) {
+              for (let i=0;i<aTab.window.length;i++)
+                for (let j=0;j<aTab.window[i].length;j++)
+                  if (aTab.window[i][j].name==="messageBrowser" && aTab.window[i][j]?.gMessageNotificationBar)
+                    return aTab.window[i][j]?.gMessageNotificationBar.msgNotificationBar;
+            }
+            console.error("appendNotification - could not get window for tabId " + this.properties.tabId);
+            return null;
+          }
+        }
+        break;
+      case 'top':
+        const w = this.parent.extension.windowManager.get(
+            this.properties.windowId,
+            this.parent.context
+        ).window;
+
+        if (!w.gExtensionNotificationTopBox) {
+          const messengerBody = w.document.getElementById('messengerBody');
+          if (messengerBody) {
+            w.gExtensionNotificationTopBox = new w.MozElements.NotificationBox(
+                (element) => {
+                  element.id = 'extension-notification-top-box';
+                  element.setAttribute('notificationside', 'top');
+                  messengerBody.insertBefore(
+                      element,
+                      messengerBody.firstChild
+                  );
+                }
+            );
+          } else {
+            const toolbox = w.document.querySelector('toolbox');
+            if (toolbox) {
+              w.gExtensionNotificationTopBox = new w.MozElements.NotificationBox(
+                  (element) => {
+                    element.id = 'extension-notification-top-box';
+                    element.setAttribute('notificationside', 'top');
+                    element.style.marginInlineStart = "var(--spaces-total-width)";
+                    toolbox.insertAdjacentElement(
+                        'afterend', element
+                    );
+                  }
+              );
+            } else {
+              w.gExtensionNotificationTopBox = new w.MozElements.NotificationBox(
+                  (element) => {
+                    element.id = 'extension-notification-top-box';
+                    element.setAttribute('notificationside', 'top');
+                    w.document.documentElement.insertBefore(
+                        element,
+                        w.document.documentElement.firstChild
+                    );
+                  }
+              );
+            }
+          }
+        }
+        return w.gExtensionNotificationTopBox;
+        break;
+      default:
+      case 'bottom':
+        return this.getNotificationBox();
+        break;
+
+    }
+
+  }
+
   getNotificationBox() {
     const w = this.parent.extension.windowManager.get(
-      this.properties.windowId,
-      this.parent.context
+        this.properties.windowId,
+        this.parent.context
     ).window;
     switch (this.properties.placement) {
       case 'message':
@@ -131,7 +249,7 @@ class Notification {
         if (w.gMessageNotificationBar) {
           return w.gMessageNotificationBar.msgNotificationBar;
         }
-      // break omitted
+        // break omitted
 
       default:
       case 'bottom':
@@ -148,15 +266,15 @@ class Notification {
         if (!w.gExtensionNotificationBottomBox) {
           let statusbar = w.document.querySelector('[class~="statusbar"]');
           w.gExtensionNotificationBottomBox = new w.MozElements.NotificationBox(
-            (element) => {
-              element.id = 'extension-notification-bottom-box';
-              element.setAttribute('notificationside', 'bottom');
-              if (statusbar) {
-                statusbar.parentNode.insertBefore(element, statusbar);
-              } else {
-                w.document.documentElement.append(element);
+              (element) => {
+                element.id = 'extension-notification-bottom-box';
+                element.setAttribute('notificationside', 'bottom');
+                if (statusbar) {
+                  statusbar.parentNode.insertBefore(element, statusbar);
+                } else {
+                  w.document.documentElement.append(element);
+                }
               }
-            }
           );
         }
         return w.gExtensionNotificationBottomBox;
@@ -167,25 +285,25 @@ class Notification {
           const toolbox = w.document.querySelector('toolbox');
           if (toolbox) {
             w.gExtensionNotificationTopBox = new w.MozElements.NotificationBox(
-              (element) => {
-                element.id = 'extension-notification-top-box';
-                element.setAttribute('notificationside', 'top');
-                toolbox.parentElement.insertBefore(
-                  element,
-                  toolbox.nextElementSibling
-                );
-              }
+                (element) => {
+                  element.id = 'extension-notification-top-box';
+                  element.setAttribute('notificationside', 'top');
+                  toolbox.parentElement.insertBefore(
+                      element,
+                      toolbox.nextElementSibling
+                  );
+                }
             );
           } else {
             w.gExtensionNotificationTopBox = new w.MozElements.NotificationBox(
-              (element) => {
-                element.id = 'extension-notification-top-box';
-                element.setAttribute('notificationside', 'top');
-                w.document.documentElement.insertBefore(
-                  element,
-                  w.document.documentElement.firstChild
-                );
-              }
+                (element) => {
+                  element.id = 'extension-notification-top-box';
+                  element.setAttribute('notificationside', 'top');
+                  w.document.documentElement.insertBefore(
+                      element,
+                      w.document.documentElement.firstChild
+                  );
+                }
             );
           }
         }
@@ -198,9 +316,9 @@ class Notification {
     // but not by dismissal. In that case, the default value defined in the constructor
     // defines the value of closedByUser which is used by the event emitter.
     this.closedByUser = closedByUser;
-    const notificationBox = this.getNotificationBox();
+    const notificationBox = this._getNotificationBox();
     const notification = notificationBox.getNotificationWithValue(
-      `extension-notification-${this.notificationId}`
+        `extension-notification-${this.notificationId}`
     );
     notificationBox.removeNotification(notification);
   }
@@ -246,8 +364,8 @@ var notificationbar = class extends ExtensionAPI {
         async create(properties) {
           const notificationId = self.nextId++;
           self.notificationsMap.set(
-            notificationId,
-            new Notification(notificationId, properties, self)
+              notificationId,
+              new ExtensionNotification(notificationId, properties, self)
           );
           return notificationId;
         },
@@ -255,8 +373,8 @@ var notificationbar = class extends ExtensionAPI {
         async clear(notificationId) {
           if (self.notificationsMap.has(notificationId)) {
             self.notificationsMap
-              .get(notificationId)
-              .remove(/* closedByUser */ false);
+                .get(notificationId)
+                .remove(/* closedByUser */ false);
             return true;
           }
           return false;
@@ -275,7 +393,7 @@ var notificationbar = class extends ExtensionAPI {
           name: 'notificationbar.onDismissed',
           register: (fire) => {
             const listener = (event, windowId, notificationId) =>
-              fire.async(windowId, notificationId);
+                fire.async(windowId, notificationId);
 
             self.emitter.on('dismissed', listener);
             return () => {
@@ -289,7 +407,7 @@ var notificationbar = class extends ExtensionAPI {
           name: 'notificationbar.onClosed',
           register: (fire) => {
             const listener = (event, windowId, notificationId, closedByUser) =>
-              fire.async(windowId, notificationId, closedByUser);
+                fire.async(windowId, notificationId, closedByUser);
 
             self.emitter.on('closed', listener);
             return () => {
@@ -303,7 +421,7 @@ var notificationbar = class extends ExtensionAPI {
           name: 'notificationbar.onButtonClicked',
           register: (fire) => {
             const listener = (event, windowId, notificationId, buttonId) =>
-              fire.async(windowId, notificationId, buttonId);
+                fire.async(windowId, notificationId, buttonId);
 
             self.emitter.on('buttonclicked', listener);
             return () => {

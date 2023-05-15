@@ -6,7 +6,13 @@
   "icons": {
     "48": "icon.png"
   },
-
+  "permissions": [
+    "messagesRead",
+    "activeTab",
+    "tabs",
+    "compose",
+    "menus"
+  ],
   "applications": {
     "gecko": {
       "id": "notificationbar@thunderbird.api.development",
