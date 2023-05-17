@@ -42,9 +42,24 @@
         "id": "NotificationProperties",
         "type": "object",
         "properties": {
+          "id": {
+            "optional": true,
+            "description": "set the notification Id (or omit this id, and a default ID will be set",
+            "type": "string"
+          },
           "windowId": {
             "description": "ID of the window, where the notification should be added to.",
             "type": "integer"
+          },
+          "tabIndex": {
+            "description": "Index of the tab in window, where the notification should be added to.",
+            "type": "integer",
+            "optional": true
+          },
+          "tabId": {
+            "description": "Id of the tab in window, where the notification should be added to. ",
+            "type": "integer",
+            "optional": true
           },
           "label": {
             "description": "Label of the notification.",
@@ -96,13 +111,21 @@
                 "type": "string",
                 "pattern": "^(normal|bold(er)?|lighter|1000|([1-9]{1}[0-9]{0,2}))$"
               },
-              "^(background-)?color$": {
+              "^background-color$": {
                 "type": "string",
-                "pattern": "^((?!transparent)([a-z]{4,})|-moz-([a-zA-Z\\-]+)|#(?=[a-f0-9]*)(?:.{3}|.{6})|rgb\\s*\\(\\s*(1?[0-9]{1,2}|2[0-4][0-9]|25[0-5])\\s*,\\s*(1?[0-9]{1,2}|2[0-4][0-9]|25[0-5])\\s*,\\s*(1?[0-9]{1,2}|2[0-4][0-9]|25[0-5])\\)|rgb\\s*\\(\\s*(1(\\.0+)?|0|0?\\.[0-9]+)\\s*,\\s*(1(\\.0+)?|0|0?\\.[0-9]+)\\s*,\\s*(1(\\.0+)?|0|0?\\.[0-9]+)\\s*\\)|rgb\\s*\\(\\s*(([1-9]{1}[0-9]?|100)%|0%?)\\s*,\\s*(([1-9]{1}[0-9]?|100)%|0%?)\\s*,\\s*(([1-9]{1}[0-9]?|100)%|0%?)\\s*\\))$"
+                "pattern": "^((?!transparent)([a-z]{3,})|-moz-([a-zA-Z\\-]+)|#(?=[a-f0-9]*)(?:.{3}|.{6})|rgb\\s*\\(\\s*(1?[0-9]{1,2}|2[0-4][0-9]|25[0-5])\\s*,\\s*(1?[0-9]{1,2}|2[0-4][0-9]|25[0-5])\\s*,\\s*(1?[0-9]{1,2}|2[0-4][0-9]|25[0-5])\\)|rgb\\s*\\(\\s*(1(\\.0+)?|0|0?\\.[0-9]+)\\s*,\\s*(1(\\.0+)?|0|0?\\.[0-9]+)\\s*,\\s*(1(\\.0+)?|0|0?\\.[0-9]+)\\s*\\)|rgb\\s*\\(\\s*(([1-9]{1}[0-9]?|100)%|0%?)\\s*,\\s*(([1-9]{1}[0-9]?|100)%|0%?)\\s*,\\s*(([1-9]{1}[0-9]?|100)%|0%?)\\s*\\))$"
               },
               "^background-image$": {
                 "type": "string",
-                "pattern": "/^url\\((?<delim>(\"|'))(moz-extension:\\/\\/[a-f0-9\\-]+\\/([a-zA-Z0-9._\\-\\/]+)|([a-zA-Z0-9\\/]+)\\.(jpg|jpeg|png))(?=<delim>)\\)$"
+                "pattern": "^url\\([\"'](moz-extension:\\/\\/[a-f0-9\\-]+\\/([a-zA-Z0-9._\\-\\/]+)|([a-zA-Z0-9\\/]+)\\.(jpg|jpeg|png))[\"']\\)$"
+              },
+              "^background-repeat$": {
+                "type": "string",
+                "pattern": "^no-repeat$"
+              },
+              "^background-position-x": {
+                "type": "string",
+                "pattern": "^[0-9]+(em|px|%)$"
               },
               "^(padding|margin)(\\-(top|left|right|bottom|))?$": {
                 "type": "string",
@@ -154,7 +177,7 @@
         "async": true,
         "parameters": [
           {
-            "type": "integer",
+            "type": "string",
             "name": "notificationId",
             "description": "The ID of the notification to be removed."
           }
@@ -181,7 +204,7 @@
             "description": "The ID of the window containing the notification of the clicked button."
           },
           {
-            "type": "integer",
+            "type": "string",
             "name": "notificationId",
             "description": "The ID of the notification of the clicked button."
           },
@@ -203,7 +226,7 @@
             "description": "The ID of the window containing the dismissed notification."
           },
           {
-            "type": "integer",
+            "type": "string",
             "name": "notificationId",
             "description": "The ID of the dismissed notification."
           }
@@ -220,7 +243,7 @@
             "description": "The ID of the window containing the closed notification."
           },
           {
-            "type": "integer",
+            "type": "string",
             "name": "notificationId",
             "description": "The ID of the closed notification."
           },

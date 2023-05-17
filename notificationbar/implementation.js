@@ -104,6 +104,10 @@ class ExtensionNotification {
     if (!element)
       return;
 
+    let containerElement = null;
+    if (TBMajorVersion >= SuperNovaFirstMajorVersion) {
+      containerElement = element.shadowRoot.querySelector(".container");
+    }
     if (style) {
       const allowedCssPropNames = [
         'background',
@@ -125,6 +129,11 @@ class ExtensionNotification {
       });
       for (let cssPropertyName of sanitizedStyles) {
         element.style[cssPropertyName] = style[cssPropertyName];
+        if (containerElement)
+          containerElement.style[cssPropertyName] = style[cssPropertyName];
+      }
+      if (containerElement && this.properties.icon) {
+        containerElement.querySelector("span.icon").style.display = "none"; // because Supernova will display the default (i) icon
       }
     }
   }
