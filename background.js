@@ -3,9 +3,9 @@ messenger.notificationbar.onButtonClicked.addListener((windowId, notificationId,
   console.log(`Listener #1 sees: button ${buttonId} clicked in notification ${notificationId} in window ${windowId}.`);
   if (["btn-keep"].includes(buttonId)) {
     console.log("Box will not close, as long as one listener returns {close:false}.");
-    return {close: false};
+    return { close: false };
   } else {
-    return {close: true};
+    return { close: true };
   }
 });
 
@@ -30,12 +30,12 @@ messenger.notificationbar.onClosed.addListener((windowId, notificationId, closed
 
 browser.menus.create({
   contexts: ["all"],
-  icons:{
-    16:"icon.png",
-    32:"icon.png",
+  icons: {
+    16: "icon.png",
+    32: "icon.png",
   },
-  id:"message",
-  title:"Show Notification (message top)",
+  id: "message",
+  title: "Show Notification (message top)",
   visible: true
 }, () => {
   console.log("MENU ADDED");
@@ -43,12 +43,12 @@ browser.menus.create({
 
 browser.menus.create({
   contexts: ["all"],
-  icons:{
-    16:"icon.png",
-    32:"icon.png",
+  icons: {
+    16: "icon.png",
+    32: "icon.png",
   },
-  id:"top",
-  title:"Show Notification (top)",
+  id: "top",
+  title: "Show Notification (top)",
   visible: true
 }, () => {
   console.log("MENU ADDED");
@@ -56,19 +56,19 @@ browser.menus.create({
 
 browser.menus.create({
   contexts: ["all"],
-  icons:{
-    16:"icon.png",
-    32:"icon.png",
+  icons: {
+    16: "icon.png",
+    32: "icon.png",
   },
-  id:"bottom",
-  title:"Show Notification (bottom)",
+  id: "bottom",
+  title: "Show Notification (bottom)",
   visible: true
 }, () => {
   console.log("MENU ADDED");
 });
 
 browser.menus.onClicked.addListener(async (info, tab) => {
-  console.log("MENU CLICKED",tab,info);
+  console.log("MENU CLICKED", tab, info);
   await messenger.notificationbar.create({
     windowId: tab.windowId,
     tabIndex: tab.index,
@@ -83,8 +83,8 @@ browser.menus.onClicked.addListener(async (info, tab) => {
     },
     buttons: [
       {
-        id:"button1",
-        label:"Button 1"
+        id: "button1",
+        label: "Button 1"
       }
     ]
   });
@@ -146,11 +146,11 @@ messenger.windows.onCreated.addListener(addBoxes);
 
 // add boxes to all existing windows
 messenger.windows.getAll()
-    .then(windows => {
-      for (let window of windows) {
-        addBoxes(window);
-      }
-    });
+  .then(windows => {
+    for (let window of windows) {
+      addBoxes(window);
+    }
+  });
 
 // open a custom window to see notification bars there as well
 messenger.windows.create({

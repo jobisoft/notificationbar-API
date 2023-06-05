@@ -35,7 +35,17 @@
       {
         "id": "Priority",
         "type": "integer",
-        "enum": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        "enum": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ],
         "description": "Priority of the notification."
       },
       {
@@ -71,14 +81,20 @@
             "default": [],
             "description": "Notification action buttons.",
             "type": "array",
-            "items": { "$ref": "ButtonProperties" }
+            "items": {
+              "$ref": "ButtonProperties"
+            }
           },
           "placement": {
             "optional": true,
             "default": "bottom",
             "description": "The placement of the notification.",
             "type": "string",
-            "enum": ["top", "bottom", "message"]
+            "enum": [
+              "top",
+              "bottom",
+              "message"
+            ]
           },
           "style": {
             "optional": true,
@@ -178,11 +194,10 @@
         "type": "function",
         "description": "Retrieves all notifications.",
         "async": true,
-        "parameters": [
-        ]
+        "parameters": []
       }
     ],
-    "events" : [
+    "events": [
       {
         "name": "onButtonClicked",
         "type": "function",
