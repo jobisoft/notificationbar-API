@@ -42,19 +42,9 @@
         "id": "NotificationProperties",
         "type": "object",
         "properties": {
-          "id": {
-            "optional": true,
-            "description": "set the notification Id (or omit this id, and a default ID will be set",
-            "type": "string"
-          },
           "windowId": {
             "description": "ID of the window, where the notification should be added to.",
             "type": "integer"
-          },
-          "tabIndex": {
-            "description": "Index of the tab in window, where the notification should be added to.",
-            "type": "integer",
-            "optional": true
           },
           "tabId": {
             "description": "Id of the tab in window, where the notification should be added to. ",

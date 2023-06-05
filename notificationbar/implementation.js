@@ -16,7 +16,7 @@ class ExtensionNotification {
     this.notificationId = notificationId;
     this._getNotificationBox = null;
 
-    const { buttons, icon, label, priority, style, windowId , tabId, tabIndex } = properties;
+    const { buttons, icon, label, priority, style, windowId } = properties;
 
     const iconURL =
         icon && !icon.includes(':')
