@@ -71,7 +71,6 @@ browser.menus.onClicked.addListener(async (info, tab) => {
   console.log("MENU CLICKED", tab, info);
   await messenger.notificationbar.create({
     windowId: tab.windowId,
-    tabIndex: tab.index,
     tabId: tab.id,
     priority: 9,
     label: "NOTIFICATION from MENU",
