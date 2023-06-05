@@ -271,15 +271,15 @@ class ExtensionNotification {
         let messageBrowser = null;
         switch (aTab.nativeTab.mode?.name) {
           case "mailMessageTab":
-            console.log("message tab");
+            // message tab;
             messageBrowser = aTab.nativeTab.chromeBrowser.contentWindow;
             break;
           case "mail3PaneTab":
-            console.log("message in mail3pane tab");
+            // message in mail3pane tab
             messageBrowser = aTab.nativeTab.chromeBrowser.contentWindow.messageBrowser.contentWindow;
             break;
           default:
-            console.log("message window");
+            // message window;
             messageBrowser = aTab.nativeTab.messageBrowser.contentWindow;
             break;
         }
