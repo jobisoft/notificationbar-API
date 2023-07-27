@@ -183,7 +183,7 @@
         "async": true,
         "parameters": [
           {
-            "type": "string",
+            "type": "integer",
             "name": "notificationId",
             "description": "The ID of the notification to be removed."
           }
@@ -209,7 +209,7 @@
             "description": "The ID of the window containing the notification of the clicked button."
           },
           {
-            "type": "string",
+            "type": "integer",
             "name": "notificationId",
             "description": "The ID of the notification of the clicked button."
           },
@@ -231,7 +231,7 @@
             "description": "The ID of the window containing the dismissed notification."
           },
           {
-            "type": "string",
+            "type": "integer",
             "name": "notificationId",
             "description": "The ID of the dismissed notification."
           }
@@ -248,7 +248,7 @@
             "description": "The ID of the window containing the closed notification."
           },
           {
-            "type": "string",
+            "type": "integer",
             "name": "notificationId",
             "description": "The ID of the closed notification."
           },
