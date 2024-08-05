@@ -77,8 +77,10 @@ browser.menus.onClicked.addListener(async (info, tab) => {
     icon: "icon.png",
     placement: info.menuItemId,
     style: {
-      "color": "rgb(255,255,255)",
-      "background-color": "rgb(255,0,0)"
+      "color": "blue",
+      "font-weight": "bold",
+      "font-style": "italic",
+      "background-color": "green",
     },
     buttons: [
       {
