@@ -1,6 +1,6 @@
 /*eslint no-fallthrough: ["error", { "commentPattern": "break[\\s\\w]*omitted" }]*/
 
-// Works in Thunderbird 115+
+// Works in Thunderbird 128+
 
 'use strict';
 
@@ -72,7 +72,6 @@ class ExtensionNotification {
       `extension-notification-${this.notificationId}`,
       {
         label,
-        image: iconURL,
         priority,
         eventCallback: notificationBarCallback,
       },
@@ -90,6 +89,7 @@ class ExtensionNotification {
       'font',
     ];
 
+    let containerElement = getContainerElement(element);
     if (style) {
       const sanitizedStyles = Object.keys(style).filter((cssPropertyName) => {
         const parts = cssPropertyName.split('-');
@@ -103,16 +103,31 @@ class ExtensionNotification {
         );
       });
 
-      let containerElement = getContainerElement(element);
       for (let cssPropertyName of sanitizedStyles) {
         element.style[cssPropertyName] = style[cssPropertyName];
         if (containerElement) {
           containerElement.style[cssPropertyName] = style[cssPropertyName];
         }
       }
-      if (containerElement && this.properties.icon) {
-        containerElement.querySelector("span.icon").style.display = "none"; // because Supernova will display the default (i) icon
-      }
+    }
+
+    if (iconURL) {
+      let iconContainer = containerElement.querySelector(".icon-container");
+      let icon = iconContainer.querySelector("img");
+      icon.remove();
+
+      const w = this.parent.extension.windowManager.get(
+        this.properties.windowId,
+        this.parent.context
+      ).window;
+      const img = w.document.createElement("img");
+      img.style.padding = "4px"; // alternatively set icon class and remove content
+      img.setAttribute("src", iconURL);
+      img.setAttribute("draggable", "false");
+      img.setAttribute("width", "16");
+      img.setAttribute("height", "16");
+      img.setAttribute("alt", label);
+      iconContainer.appendChild(img);
     }
   }
 
