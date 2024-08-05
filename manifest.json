@@ -16,7 +16,7 @@
   "applications": {
     "gecko": {
       "id": "notificationbar@thunderbird.api.development",
-      "strict_min_version": "128.0"
+      "strict_min_version": "115.0"
     }
   },
   "background": {

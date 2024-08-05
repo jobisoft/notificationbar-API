@@ -1,6 +1,6 @@
 /*eslint no-fallthrough: ["error", { "commentPattern": "break[\\s\\w]*omitted" }]*/
 
-// Works in Thunderbird 128+
+// Works in Thunderbird 115+
 
 'use strict';
 
